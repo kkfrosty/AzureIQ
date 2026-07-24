@@ -1,0 +1,178 @@
+{
+  "$schema": "../schemas/capability-registry.schema.json",
+  "schemaVersion": 1,
+  "policy": {
+    "purpose": "Routing overlays and proven gaps only; Azure MCP and extension tool descriptions remain the live baseline catalog.",
+    "defaultSelectionOrder": [
+      "installed Azure MCP or extension tool",
+      "installed Azure skill",
+      "service-pack evidence or procedure",
+      "declarative IaC",
+      "proven AzureIQ CLI operation",
+      "ARM REST or supervised browser fallback"
+    ],
+    "unregisteredMcpAllowed": true
+  },
+  "capabilities": [
+    {
+      "id": "azure.incident.diagnose",
+      "intents": [
+        "diagnose Azure outage or unhealthy resource",
+        "investigate latency, errors, authentication failures, or unexpected behavior",
+        "correlate Azure platform and application evidence"
+      ],
+      "owner": "composite",
+      "status": "available",
+      "valueProof": "platform-baseline",
+      "primary": {
+        "kind": "mcp",
+        "selector": "mcp_azure_mcp_ser_applens",
+        "operation": "service-supported diagnosis"
+      },
+      "limitations": [
+        "AppLens detector coverage and hypotheses vary by Azure service and detector implementation.",
+        "A detector recommendation is candidate evidence, not proof of root cause or recovery.",
+        "Required logs may be absent, delayed, sampled, expired, or inaccessible."
+      ],
+      "requiredEvidence": [
+        "Resource Health and relevant Service Health evidence",
+        "Azure Activity Log and deployment/configuration changes for the incident window",
+        "Azure Monitor metrics and service-specific logs",
+        "Application Insights request, dependency, exception, and trace evidence when applicable",
+        "effective configuration, identity, policy, network, quota, and dependency state",
+        "a falsifiable cause hypothesis with contradictory evidence and a disproving check"
+      ],
+      "fallback": {
+        "kind": "skill",
+        "selector": "azureiq-incident-response",
+        "operation": "evidence-driven diagnosis using service pack and available Azure read tools"
+      },
+      "verification": [
+        "Use AzureIQ Verifier after recovery or remediation.",
+        "Verify user-visible behavior and telemetry over an explicit observation window.",
+        "Do not declare resolution from AppLens output or command success alone."
+      ],
+      "references": [
+        "../.github/agents/azureiq-incident-diagnostician.agent.md",
+        "../.github/skills/azureiq-incident-response/SKILL.md"
+      ]
+    },
+    {
+      "id": "azure.resource-group.ensure",
+      "intents": [
+        "create an Azure Resource Group",
+        "ensure an Azure Resource Group exists in a location"
+      ],
+      "owner": "azureiq",
+      "status": "gap-confirmed",
+      "valueProof": "value-demonstrated",
+      "primary": {
+        "kind": "azureiq-cli",
+        "selector": "src/AzureIQ.Execution",
+        "operation": "resource-group ensure",
+        "arguments": [
+          "--name <resource-group-name>",
+          "--location <azure-region>",
+          "--what-if for preflight"
+        ]
+      },
+      "limitations": [
+        "No generic Resource Group create mutation was exposed by the installed Azure MCP version during the live comparison.",
+        "The CLI is invoked through the terminal tool and is not yet a first-class MCP tool."
+      ],
+      "requiredEvidence": [
+        "effective private supervised-management scope",
+        "active Azure credential matches private scope",
+        "explicit approval for exact name and location",
+        "preflight confirms absence or matching existing location"
+      ],
+      "fallback": null,
+      "verification": [
+        "Verify through Azure Resource Graph or an independent Azure Resource Group read.",
+        "Rerun ensure and require created=false to demonstrate idempotency."
+      ],
+      "references": [
+        "../docs/execution-tools.md",
+        "../src/AzureIQ.Execution/Program.cs"
+      ]
+    },
+    {
+      "id": "postgres.database.operate",
+      "intents": [
+        "connect to and inspect a PostgreSQL database",
+        "query or modify PostgreSQL schema or data",
+        "analyze PostgreSQL query plans, migrations, or dashboard metrics"
+      ],
+      "owner": "extension-mcp",
+      "status": "available",
+      "valueProof": "platform-baseline",
+      "primary": {
+        "kind": "mcp",
+        "selector": "ms-ossdata.vscode-pgsql PostgreSQL MCP",
+        "operation": "select among the 23 extension-contributed tools by live tool description"
+      },
+      "limitations": [
+        "The local-process MCP endpoint uses an ephemeral loopback port.",
+        "A transient startup ECONNREFUSED is not a persistent fault when a later start discovers tools.",
+        "Database modifications require current schema context and explicit user confirmation."
+      ],
+      "requiredEvidence": [
+        "current PostgreSQL connection profile and database context",
+        "current schema context before query or modification",
+        "validation queries for literal values where required by the extension tool contract"
+      ],
+      "fallback": {
+        "kind": "extension-tool",
+        "selector": "pgsql language-model tools",
+        "operation": "use when the extension MCP reports unavailable"
+      },
+      "verification": [
+        "Use a read-only query to verify schema or data modifications.",
+        "Do not add AzureIQ PostgreSQL code unless a specific extension-tool gap is reproduced."
+      ],
+      "references": [
+        "../docs/execution-tools.md"
+      ]
+    },
+    {
+      "id": "apim.unexpected-response.diagnose",
+      "intents": [
+        "diagnose an unexpected API Management response",
+        "distinguish APIM policy, backend, cache, gateway, or pre-APIM failure"
+      ],
+      "owner": "composite",
+      "status": "draft",
+      "valueProof": "unproven",
+      "primary": {
+        "kind": "composite",
+        "selector": "AppLens and Azure Monitor baseline plus APIM service-pack evidence",
+        "operation": "unexpected-response diagnosis"
+      },
+      "limitations": [
+        "The APIM service-pack query and runbook have not yet demonstrated value over the Azure MCP baseline on a live APIM incident.",
+        "External request tracing is version, gateway, workspace, permission, and data-sensitivity dependent."
+      ],
+      "requiredEvidence": [
+        "APIM gateway log record scoped by UTC time, resource, API, operation, and correlation ID when available",
+        "backend response and telemetry correlation",
+        "effective policy, revision, backend, cache, identity, network, and recent-change state",
+        "known-good comparison path"
+      ],
+      "fallback": {
+        "kind": "service-pack",
+        "selector": "service-packs/api-management",
+        "operation": "runbooks/unexpected-response.md with queries/request-evidence.kql"
+      },
+      "verification": [
+        "Compare final gateway behavior with backend behavior and expected API contract.",
+        "Check adjacent operations, revisions, regions, and dependencies for regression.",
+        "Keep, revise, or retire the service-pack artifacts after the baseline comparison."
+      ],
+      "references": [
+        "../service-packs/api-management/manifest.yaml",
+        "../service-packs/api-management/runbooks/unexpected-response.md",
+        "../service-packs/api-management/queries/request-evidence.kql"
+      ]
+    }
+  ]
+}

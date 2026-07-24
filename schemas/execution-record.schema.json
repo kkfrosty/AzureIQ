@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azureiq.local/schemas/execution-record.schema.json",
+  "title": "AzureIQ Sanitized Execution Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "changeId",
+    "startedAt",
+    "completedAt",
+    "intent",
+    "route",
+    "artifact",
+    "authorization",
+    "scope",
+    "inputs",
+    "result",
+    "verification",
+    "privacy",
+    "learning"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "pattern": "^RUN-[A-Z0-9-]{8,64}$" },
+    "changeId": { "type": ["string", "null"], "maxLength": 64 },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "completedAt": { "type": "string", "format": "date-time" },
+    "intent": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "selector", "operation", "version"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["mcp", "extension-tool", "azureiq-cli", "iac", "arm-rest", "browser"]
+        },
+        "selector": { "type": "string", "minLength": 1 },
+        "operation": { "type": "string", "minLength": 1 },
+        "version": { "type": ["string", "null"] }
+      }
+    },
+    "artifact": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "sha256"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      ]
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "status", "manifestDigest"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["read-only", "supervised", "policy"] },
+        "status": { "type": "string", "enum": ["not-required", "approved", "denied", "expired"] },
+        "manifestDigest": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "environment"],
+      "properties": {
+        "reference": { "type": "string", "enum": ["private-local", "hosted-private-scope"] },
+        "environment": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parametersDigest", "containsSecrets"],
+      "properties": {
+        "parametersDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "containsSecrets": { "const": false }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "summary", "created", "modified", "deleted"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["succeeded", "failed", "partial", "inconclusive", "skipped"]
+        },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "created": { "type": "integer", "minimum": 0 },
+        "modified": { "type": "integer", "minimum": 0 },
+        "deleted": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "evidenceRefs"],
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["verified", "failed", "inconclusive", "scope-mismatch", "not-run"]
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secretsStored", "customerIdentifiersStored", "rawPayloadsStored"],
+      "properties": {
+        "secretsStored": { "const": false },
+        "customerIdentifiersStored": { "const": false },
+        "rawPayloadsStored": { "const": false }
+      }
+    },
+    "learning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateArtifacts", "updateArtifacts", "incidentRecordRef"],
+      "properties": {
+        "candidateArtifacts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "updateArtifacts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "incidentRecordRef": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "operations": [
+    {
+      "operation": "resource-group ensure",
+      "mutatesAzure": true,
+      "parameters": {
+        "name": "required string",
+        "location": "required Azure region",
+        "whatIf": "optional boolean",
+        "authentication": "optional VisualStudioCode|ManagedIdentity",
+        "managedIdentityClientId": "optional client ID",
+        "config": "optional ignored local config path"
+      },
+      "guarantees": [
+        "exact private subscription scope",
+        "idempotent create-or-verify",
+        "private scope redaction",
+        "machine-readable result"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "../schemas/expected-inventory.schema.json",
+  "schemaVersion": 1,
+  "environmentBoundary": "resource-group",
+  "requiredOwnershipTags": {
+    "managedBy": "AzureIQ",
+    "lifecycle": "ephemeral",
+    "caseStudy": "WaypointFreight"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "count": 2,
+      "sourceOutput": "AZURE_LOG_ANALYTICS_WORKSPACE_ID"
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "count": 1,
+      "sourceOutput": "APPLICATION_INSIGHTS_NAME"
+    },
+    {
+      "type": "Microsoft.ApiManagement/service",
+      "count": 1,
+      "sourceOutput": "API_MANAGEMENT_NAME"
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "count": 1
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "count": 1,
+      "sourceOutput": "SERVICE_API_NAME"
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "count": 1
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "count": 5
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "count": 1
+    },
+    {
+      "type": "Microsoft.Insights/activityLogAlerts",
+      "count": 1
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "count": 3
+    },
+    {
+      "type": "Microsoft.AlertsManagement/smartDetectorAlertRules",
+      "count": 1
+    }
+  ],
+  "allowedChildResourcePrefixes": [
+    "Microsoft.ApiManagement/service/",
+    "Microsoft.Insights/diagnosticSettings",
+    "Microsoft.Web/sites/basicPublishingCredentialsPolicies"
+  ],
+  "externalResources": [
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "scope": "subscription",
+      "count": 1,
+      "deleteBeforeBoundary": true
+    }
+  ],
+  "teardownBlockers": [
+    "unknown resource type or ownership",
+    "resource lock",
+    "resource without matching environmentId",
+    "persistent or protected data",
+    "active resource outside the recorded resource group"
+  ],
+  "softDelete": {
+    "Microsoft.ApiManagement/service": {
+      "retentionHours": 48,
+      "purgeRequiresSeparateApproval": true,
+      "nextRunUsesUniqueEnvironmentId": true
+    }
+  }
+}

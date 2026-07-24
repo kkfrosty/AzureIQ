@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azureiq.local/schemas/action-manifest.schema.json",
+  "title": "AzureIQ Action Manifest",
+  "description": "A bounded Azure change proposal. Schema validity does not grant authorization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "changeId",
+    "createdAt",
+    "expiresAt",
+    "mode",
+    "scope",
+    "principal",
+    "evidence",
+    "desiredPostcondition",
+    "operations",
+    "risk",
+    "impacts",
+    "preconditions",
+    "validation",
+    "rollback",
+    "verification",
+    "approval"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "changeId": {
+      "type": "string",
+      "pattern": "^CHG-[A-Z0-9][A-Z0-9-]{5,63}$"
+    },
+    "initiatingRecordId": {
+      "type": ["string", "null"],
+      "maxLength": 128
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["supervised", "policy-eligible"]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenantId", "subscriptionId", "environment", "resourceIds"],
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "subscriptionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "resourceGroupName": {
+          "type": ["string", "null"],
+          "maxLength": 90
+        },
+        "resourceIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^/subscriptions/[0-9a-fA-F-]{36}/"
+          }
+        },
+        "regions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      }
+    },
+    "principal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenantId", "objectId", "principalType", "minimumRole", "roleScope"],
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "objectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "principalType": {
+          "type": "string",
+          "enum": ["user", "servicePrincipal", "managedIdentity"]
+        },
+        "minimumRole": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "roleScope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pimActivationRequired": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidenceId", "observedAt", "source", "summary"],
+        "properties": {
+          "evidenceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        }
+      }
+    },
+    "desiredPostcondition": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "sequence",
+          "tool",
+          "action",
+          "targetResourceId",
+          "artifact",
+          "parameters",
+          "containsSecrets",
+          "idempotencyGuard"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "tool": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "targetResourceId": {
+            "type": "string",
+            "pattern": "^/subscriptions/[0-9a-fA-F-]{36}/"
+          },
+          "artifact": {
+            "anyOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "version", "sha256"],
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                  "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+                }
+              }
+            ]
+          },
+          "parameters": {
+            "type": "object"
+          },
+          "containsSecrets": {
+            "const": false
+          },
+          "idempotencyGuard": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "rationale", "blastRadius"],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": ["R1", "R2", "R3"]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "blastRadius": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      }
+    },
+    "impacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availability", "security", "data", "cost", "downtime"],
+      "properties": {
+        "availability": { "type": "string", "maxLength": 1024 },
+        "security": { "type": "string", "maxLength": 1024 },
+        "data": { "type": "string", "maxLength": 1024 },
+        "cost": { "type": "string", "maxLength": 1024 },
+        "downtime": { "type": "string", "maxLength": 1024 }
+      }
+    },
+    "preconditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check", "expected"],
+        "properties": {
+          "check": { "type": "string", "minLength": 1, "maxLength": 1024 },
+          "expected": { "type": "string", "minLength": 1, "maxLength": 1024 }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "resultReference",
+        "destructiveChangesReviewed",
+        "artifactDigestsReviewed",
+        "unresolvedDecisionPoints"
+      ],
+      "properties": {
+        "method": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "resultReference": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "destructiveChangesReviewed": { "type": "boolean" },
+        "artifactDigestsReviewed": { "type": "boolean" },
+        "unresolvedDecisionPoints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 512 }
+        }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supported", "trigger", "procedure", "timeoutMinutes"],
+      "properties": {
+        "supported": { "type": "boolean" },
+        "trigger": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "procedure": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "timeoutMinutes": { "type": "integer", "minimum": 1, "maximum": 1440 }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criteria", "observationMinutes", "syntheticDataWrite", "owner"],
+      "properties": {
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "maxLength": 1024 }
+        },
+        "observationMinutes": { "type": "integer", "minimum": 1, "maximum": 10080 },
+        "syntheticDataWrite": { "type": "boolean" },
+        "owner": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "approver", "approvedAt", "expiresAt", "manifestDigest"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "denied", "expired"]
+        },
+        "approver": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        },
+        "approvedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "manifestDigest": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

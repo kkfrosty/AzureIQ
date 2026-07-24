@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azureiq.local/schemas/capability-registry.schema.json",
+  "title": "AzureIQ Capability Overlay Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policy", "capabilities"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purpose", "defaultSelectionOrder", "unregisteredMcpAllowed"],
+      "properties": {
+        "purpose": { "type": "string", "minLength": 1 },
+        "defaultSelectionOrder": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "unregisteredMcpAllowed": { "const": true }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "intents",
+          "owner",
+          "status",
+          "valueProof",
+          "primary",
+          "limitations",
+          "requiredEvidence",
+          "fallback",
+          "verification"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+          },
+          "intents": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "owner": {
+            "type": "string",
+            "enum": ["azure-mcp", "extension-mcp", "azureiq", "composite"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "gap-confirmed", "draft", "retired"]
+          },
+          "valueProof": {
+            "type": "string",
+            "enum": ["platform-baseline", "unproven", "value-demonstrated", "no-value"]
+          },
+          "primary": { "$ref": "#/$defs/route" },
+          "limitations": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "requiredEvidence": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "fallback": {
+            "anyOf": [
+              { "type": "null" },
+              { "$ref": "#/$defs/route" }
+            ]
+          },
+          "verification": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "references": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "selector"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["mcp", "extension-tool", "service-pack", "azureiq-cli", "skill", "composite"]
+        },
+        "selector": { "type": "string", "minLength": 1 },
+        "operation": { "type": "string", "minLength": 1 },
+        "arguments": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

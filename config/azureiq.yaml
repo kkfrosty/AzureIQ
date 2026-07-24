@@ -1,0 +1,55 @@
+schemaVersion: 1
+mode: bootstrap-read-only
+targetMode: supervised-management
+
+scope:
+  tenantId: null
+  managementGroupIds: []
+  subscriptionIds: []
+  excludedSubscriptionIds: []
+  environments: []
+  defaultLocation: null
+
+identity:
+  interactivePrincipal: null
+  inventoryRole: Reader
+  executionIdentities: []
+  requirePimForElevation: true
+
+safety:
+  azureWrites: deny
+  requireExactScope: true
+  requireActionManifest: true
+  requireExplicitApproval: true
+  approvalExpiresAfterMinutes: 30
+  maxParallelChanges: 1
+  permittedSupervisedRiskTiers:
+    - R1
+    - R2
+    - R3
+  automaticRiskTiers: []
+  prohibitedAutomaticRiskTiers:
+    - R3
+    - R4
+
+observability:
+  topology: undecided
+  logAnalyticsWorkspaceResourceIds: []
+  applicationInsightsResourceIds: []
+  activityLogExportRequired: true
+  resourceSpecificTablesPreferred: true
+  rawPayloadLoggingDefault: false
+  telemetryHealthAlertRequired: true
+
+operations:
+  primaryIac: undecided
+  approvalSystem: undecided
+  incidentSystem: undecided
+  evidenceStoreResourceId: null
+  hostedRuntime: none
+
+memory:
+  allowSecrets: false
+  allowRawPayloads: false
+  requireSourceTimestamp: true
+  requireVerifiedLearning: true

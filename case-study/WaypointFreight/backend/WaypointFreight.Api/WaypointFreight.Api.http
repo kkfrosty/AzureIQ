@@ -1,0 +1,29 @@
+@hostAddress = http://localhost:5083
+@trackingNumber = WF-1042
+
+GET {{hostAddress}}/health/ready
+Accept: application/json
+
+###
+
+GET {{hostAddress}}/api/shipments
+Accept: application/json
+X-Correlation-Id: local-list-request
+
+###
+
+GET {{hostAddress}}/api/shipments/{{trackingNumber}}
+Accept: application/json
+
+###
+
+GET {{hostAddress}}/api/shipments/{{trackingNumber}}/events
+Accept: application/json
+
+###
+
+GET {{hostAddress}}/api/shipments
+Accept: application/json
+X-Waypoint-Scenario: unavailable
+
+###

@@ -1,0 +1,47 @@
+# AzureIQ transient and raw evidence
+.azureiq/cache/
+.azureiq/evidence/raw/
+.azureiq/generated/
+.azureiq/plans/
+.azureiq/runs/
+.azureiq/tmp/
+
+# Azure Developer CLI local environments and private scope
+.azure/*
+!.azure/deployment-plan.md
+
+# Local configuration and environment secrets
+.env
+.env.*
+!.env.example
+config/local.*
+*.publishsettings
+*.pfx
+*.p12
+*.pem
+*.key
+*.jks
+
+# Infrastructure state and plans
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Deployment and data exports
+*.bacpac
+*.bak
+*.dump
+*.har
+*.trace
+
+# Tool output
+bin/
+obj/
+node_modules/
+.pytest_cache/
+__pycache__/
+TestResults/
+coverage/

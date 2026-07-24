@@ -1,0 +1,20 @@
+name: azureiq-waypoint-freight
+metadata:
+  template: azureiq-waypoint-freight@0.1.0
+
+infra:
+  provider: bicep
+  path: ./infra
+
+services:
+  api:
+    project: ./case-study/WaypointFreight/backend/WaypointFreight.Api
+    language: dotnet
+    host: appservice
+
+hooks:
+  preprovision:
+    shell: pwsh
+    run: dotnet build ./case-study/WaypointFreight/backend/WaypointFreight.Api/WaypointFreight.Api.csproj --configuration Release
+    interactive: false
+    continueOnError: false

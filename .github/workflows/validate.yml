@@ -1,0 +1,48 @@
+name: Validate AzureIQ
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workspace:
+    name: Workspace contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build AzureIQ execution host
+        run: dotnet build ./src/AzureIQ.Execution/AzureIQ.Execution.csproj --configuration Release
+
+      - name: Restore Waypoint Freight
+        run: |
+          dotnet restore ./case-study/WaypointFreight/backend/WaypointFreight.Api.Tests/WaypointFreight.Api.Tests.csproj
+          dotnet restore ./case-study/WaypointFreight/client/WaypointFreight.Client/WaypointFreight.Client.csproj
+
+      - name: Build and test Waypoint Freight
+        run: |
+          dotnet build ./case-study/WaypointFreight/backend/WaypointFreight.Api.Tests/WaypointFreight.Api.Tests.csproj --configuration Release --no-restore
+          dotnet build ./case-study/WaypointFreight/client/WaypointFreight.Client/WaypointFreight.Client.csproj --configuration Release --no-restore
+          dotnet test ./case-study/WaypointFreight/backend/WaypointFreight.Api.Tests/WaypointFreight.Api.Tests.csproj --configuration Release --no-build --no-restore
+
+      - name: Audit Waypoint Freight dependencies
+        run: |
+          dotnet list ./case-study/WaypointFreight/backend/WaypointFreight.Api/WaypointFreight.Api.csproj package --vulnerable --include-transitive --no-restore
+          dotnet list ./case-study/WaypointFreight/backend/WaypointFreight.Api.Tests/WaypointFreight.Api.Tests.csproj package --vulnerable --include-transitive --no-restore
+          dotnet list ./case-study/WaypointFreight/client/WaypointFreight.Client/WaypointFreight.Client.csproj package --vulnerable --include-transitive --no-restore
+
+      - name: Validate AzureIQ workspace
+        shell: pwsh
+        run: ./scripts/Test-Workspace.ps1

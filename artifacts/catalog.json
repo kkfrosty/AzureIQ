@@ -1,0 +1,525 @@
+{
+  "$schema": "../schemas/artifact-catalog.schema.json",
+  "schemaVersion": 1,
+  "policy": {
+    "generatedStatus": "candidate",
+    "executionRequiresCatalog": true,
+    "privateBindings": "config/local.azureiq.json or approved Key Vault references",
+    "localRunLedger": ".azureiq/runs/"
+  },
+  "artifacts": [
+    {
+      "id": "azure.resource-group.ensure",
+      "version": "1.0.0",
+      "kind": "cli-operation",
+      "executionMode": "imperative",
+      "status": "validated",
+      "valueProof": "value-demonstrated",
+      "description": "Idempotently create or verify an Azure Resource Group when no generic installed MCP mutation is available.",
+      "intents": [
+        "create an Azure Resource Group",
+        "ensure an Azure Resource Group exists in a location"
+      ],
+      "source": {
+        "path": "../src/AzureIQ.Execution/operations.json",
+        "sha256": "e06351f29054d0d8eafd3e6114af71065f4e48bfc3bb59a06fe112695ff47775",
+        "entryPoint": "resource-group ensure"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Resources/subscriptions/resourceGroups"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production",
+          "production-with-approved-manifest"
+        ],
+        "conditions": [
+          "effective private scope contains exactly one subscription",
+          "VS Code Azure credential locally or managed identity when hosted",
+          "requested location is valid for the target subscription"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "name",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "location",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "tenant and subscription scope",
+          "required": true,
+          "sensitive": true,
+          "source": "private-config"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "location-selection",
+          "condition": "No approved location is supplied or organizational region policy has multiple valid choices.",
+          "question": "Which approved Azure region should own the Resource Group metadata?",
+          "severity": "approval",
+          "canInfer": true
+        },
+        {
+          "id": "existing-location-conflict",
+          "condition": "The Resource Group already exists with a different location.",
+          "question": "Should AzureIQ use the existing Resource Group location or stop and plan a differently named group?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "live-write",
+        "lastValidatedAt": "2026-07-22",
+        "expiresAt": "2026-10-22",
+        "methods": [
+          "dry run",
+          "live non-production creation",
+          "independent Azure Resource Graph verification",
+          "second-run idempotency check",
+          "private identifier leak scan"
+        ],
+        "evidenceRefs": [
+          "capability:azure.resource-group.ensure"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Azure SDK dependency changes",
+          "authentication mode changes",
+          "target cloud changes",
+          "scope or risk policy changes",
+          "validation expires"
+        ],
+        "updatePolicy": "Create a new semantic version for behavioral or contract changes; do not silently alter an approved version."
+      },
+      "owners": [
+        "AzureIQ platform"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "apim.request-evidence",
+      "version": "0.1.0",
+      "kind": "kql-query",
+      "executionMode": "read-only",
+      "status": "draft",
+      "valueProof": "unproven",
+      "description": "Retrieve payload-minimized API Management gateway evidence by resource, UTC window, correlation, API, and operation.",
+      "intents": [
+        "retrieve APIM gateway request evidence",
+        "diagnose an unexpected APIM response"
+      ],
+      "source": {
+        "path": "../service-packs/api-management/queries/request-evidence.kql",
+        "sha256": "5b3cae16fb18b4e59d9e78552b5eaa47fe6ee3f6126911b21a22b2431dbad475",
+        "entryPoint": null
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.ApiManagement/service"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "any"
+        ],
+        "conditions": [
+          "resource-specific ApiManagementGatewayLogs data exists",
+          "caller has Log Analytics query permission",
+          "query window is within retained data"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "lookback",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "target resource, correlation, API, and operation filters",
+          "required": false,
+          "sensitive": true,
+          "source": "derived"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "gateway-table-availability",
+          "condition": "ApiManagementGatewayLogs is absent or has no records in the incident window.",
+          "question": "Is this the correct workspace and diagnostic destination, or must telemetry coverage be restored before diagnosis?",
+          "severity": "blocker",
+          "canInfer": true
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-07-19",
+        "expiresAt": "2026-10-19",
+        "methods": [
+          "official Azure Monitor table schema review",
+          "official sample-query comparison",
+          "editor diagnostics"
+        ],
+        "evidenceRefs": [
+          "https://learn.microsoft.com/azure/azure-monitor/reference/tables/apimanagementgatewaylogs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "target workspace table plan or schema changes",
+          "APIM gateway type changes",
+          "diagnostic settings change",
+          "validation expires"
+        ],
+        "updatePolicy": "Validate against live scoped data before promotion; create a new version when projected fields or semantics change."
+      },
+      "owners": [
+        "AzureIQ APIM service pack"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "apim.unexpected-response",
+      "version": "0.1.0",
+      "kind": "runbook",
+      "executionMode": "workflow",
+      "status": "draft",
+      "valueProof": "unproven",
+      "description": "Localize unexpected APIM responses across upstream proxy, inbound policy, backend, outbound policy, on-error policy, cache, and downstream behavior.",
+      "intents": [
+        "diagnose an unexpected APIM response",
+        "plan a bounded APIM response remediation"
+      ],
+      "source": {
+        "path": "../service-packs/api-management/runbooks/unexpected-response.md",
+        "sha256": "70258fc6a8a031c623095da646855ce95cc3643e873ff157a4b221dea98b3187",
+        "entryPoint": null
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.ApiManagement/service"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "any"
+        ],
+        "conditions": [
+          "APIM service, API, operation, UTC incident window, and expected behavior can be identified",
+          "mutating request replay is separately approved",
+          "tracing limitations are rechecked against the current gateway and workspace model"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "incident scope and correlation evidence",
+          "required": true,
+          "sensitive": true,
+          "source": "derived"
+        },
+        {
+          "name": "expected API contract",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "mutating-replay",
+          "condition": "Reproducing the failure can mutate production data or bypass the normal gateway path.",
+          "question": "What isolated test data and explicit data-plane approval may be used for reproduction?",
+          "severity": "blocker",
+          "canInfer": false
+        },
+        {
+          "id": "request-tracing",
+          "condition": "Existing telemetry cannot localize the policy stage and request tracing would expose additional data.",
+          "question": "Do you approve a minimized API-specific trace with time-limited credentials and controlled evidence retention?",
+          "severity": "approval",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-07-19",
+        "expiresAt": "2026-10-19",
+        "methods": [
+          "current Microsoft APIM monitoring and tracing documentation review",
+          "local link and editor validation"
+        ],
+        "evidenceRefs": [
+          "service-pack:api-management@0.1.0"
+        ]
+      },
+      "reuse": {
+        "strategy": "adapt",
+        "revalidateWhen": [
+          "APIM SKU, gateway, workspace, network, policy scope, or authentication model changes",
+          "Microsoft tracing behavior changes",
+          "validation expires"
+        ],
+        "updatePolicy": "Preserve the validated decision tree; create a new version for changed tracing, policy, or verification semantics."
+      },
+      "owners": [
+        "AzureIQ APIM service pack"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "waypoint-freight.disposable-baseline",
+      "version": "0.2.0",
+      "kind": "bicep-module",
+      "executionMode": "declarative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Deploy the disposable Waypoint Freight Container Apps and API Management baseline with managed-identity telemetry, Activity Log export, alerts, exact inventory, and supervised teardown metadata.",
+      "intents": [
+        "deploy the Waypoint Freight Azure case-study baseline",
+        "create a disposable observable App Service and API Management environment"
+      ],
+      "source": {
+        "path": "../infra/artifact-manifest.json",
+        "sha256": "724ef39a22ce59d458c0551dd97229eaf087ba9fe7271266887a15a20191dd0e",
+        "entryPoint": "infra/main.bicep"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Resources/subscriptions/resourceGroups",
+          "Microsoft.Web/serverfarms",
+          "Microsoft.Web/sites",
+          "Microsoft.App/managedEnvironments",
+          "Microsoft.App/containerApps",
+          "Microsoft.ContainerRegistry/registries",
+          "Microsoft.ApiManagement/service",
+          "Microsoft.OperationalInsights/workspaces",
+          "Microsoft.Insights/components",
+          "Microsoft.Insights/metricAlerts",
+          "Microsoft.Insights/scheduledQueryRules",
+          "Microsoft.Insights/activityLogAlerts",
+          "Microsoft.Insights/diagnosticSettings",
+          "Microsoft.Authorization/roleAssignments"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "disposable-non-production"
+        ],
+        "conditions": [
+          "effective private scope contains exactly one supervised test subscription",
+          "eastus2 supports Container Apps Consumption, ACR Basic, and APIM Developer",
+          "the target Resource Group contains no unrelated resources or locks",
+          "the local client can supply an APIM product subscription key at runtime",
+          "the optional VNet and private-endpoint phase is not combined with this baseline"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "tenant and subscription scope",
+          "required": true,
+          "sensitive": true,
+          "source": "private-config"
+        },
+        {
+          "name": "environment name, region, Resource Group, publisher metadata, and lifecycle timestamps",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "exact API deployment ZIP and digest",
+          "required": true,
+          "sensitive": false,
+          "source": "derived"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "target-boundary-conflict",
+          "condition": "The target Resource Group contains resources, locks, ownership tags, or recent changes outside the recorded environment inventory.",
+          "question": "Should AzureIQ stop and use a new disposable Resource Group rather than modify the conflicting boundary?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "global-name-collision",
+          "condition": "The derived App Service or API Management name is unavailable or held by an APIM soft-delete record.",
+          "question": "Should AzureIQ generate a new unique environment name and rerun validation instead of purging a prior APIM name?",
+          "severity": "approval",
+          "canInfer": true
+        },
+        {
+          "id": "unexpected-what-if",
+          "condition": "Provider validation or what-if predicts a delete, replacement, broad role assignment, resource outside the declared boundary, or unregistered resource type.",
+          "question": "Should the candidate be revised and revalidated before any deployment approval?",
+          "severity": "blocker",
+          "canInfer": true
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-07-23",
+        "expiresAt": "2026-08-23",
+        "methods": [
+          "Bicep lint and compilation with pinned Azure Verified Modules",
+          "API and client Release builds plus eight integration tests",
+          "OpenAPI 3.0, APIM policy XML, JSON Schema, and privacy validation",
+          "exact AZD application package digest and archive inventory",
+          "live read-only inventory, provider, policy, quota, lock, role, deny, and APIM soft-delete preflight"
+        ],
+        "evidenceRefs": [
+          ".azure/deployment-plan.md#7-validation-proof",
+          "infra/artifact-manifest.json"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "any source or application package digest changes",
+          "an Azure Verified Module or API contract changes",
+          "target region, subscription, Resource Group, SKU, network topology, or identity model changes",
+          "policy, quota, provider registration, existing inventory, or APIM soft-delete state changes",
+          "validation expires"
+        ],
+        "updatePolicy": "Keep this version candidate until a full create, verify, teardown, absence check, and recreate cycle succeeds; create a new semantic version for material behavior or topology changes."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "Waypoint Freight case study"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "waypoint-freight.diagnostic-scenarios",
+      "version": "0.3.0",
+      "kind": "test",
+      "executionMode": "workflow",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Run protected, stateless backend failure scenarios through Waypoint Freight API Management and correlate client-visible failures with gateway and Container App telemetry.",
+      "intents": [
+        "simulate a backend exception for Azure troubleshooting",
+        "generate correlated API failure telemetry",
+        "distinguish gateway failures from backend failures"
+      ],
+      "source": {
+        "path": "../infra/artifact-manifest.0.3.0.json",
+        "sha256": "effa8d5094a95c926f62526f3e6cb4e08513c1597927645e9b52e3733c912635",
+        "entryPoint": "case-study/WaypointFreight/backend/WaypointFreight.Api/Endpoints/TestScenarioEndpoints.cs"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.App/containerApps",
+          "Microsoft.ApiManagement/service",
+          "Microsoft.Insights/components"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "disposable-non-production"
+        ],
+        "conditions": [
+          "TestScenarios:Enabled is explicitly true on the disposable backend",
+          "API Management requires a product subscription and enforces rate limits",
+          "Container App ingress accepts only the API Management public IPv4 address",
+          "scenario responses are stateless and do not call customer dependencies",
+          "request and response bodies remain excluded from telemetry"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "scenario",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "APIM subscription key",
+          "required": true,
+          "sensitive": true,
+          "source": "private-config"
+        },
+        {
+          "name": "correlation ID",
+          "required": true,
+          "sensitive": false,
+          "source": "derived"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "cloud-scenario-enable",
+          "condition": "The target is not a disposable non-production environment or backend ingress is not restricted to API Management.",
+          "question": "Should cloud diagnostic scenarios remain disabled until an isolated protected environment is available?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "dependency-fidelity",
+          "condition": "A scenario requires a real external dependency or customer data to reproduce the incident.",
+          "question": "What isolated synthetic dependency and data are approved for the higher-fidelity scenario?",
+          "severity": "approval",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-07-24",
+        "expiresAt": "2026-08-24",
+        "methods": [
+          "15 passing ASP.NET Core integration tests",
+          "local HTTP matrix for 200, 404, 409, 429, 500, 503, and 504 responses",
+          "correlation header and structured error validation",
+          "exception stack trace logging with sanitized client response",
+          "OpenAPI 3.0 generation with six paths",
+          "client Release build and rendered browser control inspection",
+          "source digest and privacy scan"
+        ],
+        "evidenceRefs": [
+          "infra/artifact-manifest.0.3.0.json",
+          "case-study/WaypointFreight/backend/WaypointFreight.Api.Tests/ShipmentApiTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "scenario behavior or response contracts change",
+          "APIM authentication, policy, rate limit, or ingress restriction changes",
+          "Container App image or telemetry configuration changes",
+          "validation expires"
+        ],
+        "updatePolicy": "Keep candidate until every scenario is invoked through APIM and independently correlated with gateway and Container App telemetry; create a new version for changed behavior."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "Waypoint Freight case study"
+      ],
+      "supersedes": [
+        "waypoint-freight.disposable-baseline@0.2.0"
+      ],
+      "supersededBy": null
+    }
+  ]
+}

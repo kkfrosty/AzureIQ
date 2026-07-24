@@ -1,0 +1,50 @@
+<policies>
+  <inbound>
+    <base />
+    <cors allow-credentials="false" terminate-unmatched-request="true">
+      <allowed-origins>
+        <origin>http://localhost:5265</origin>
+        <origin>http://127.0.0.1:5265</origin>
+      </allowed-origins>
+      <allowed-methods preflight-result-max-age="300">
+        <method>GET</method>
+        <method>OPTIONS</method>
+      </allowed-methods>
+      <allowed-headers>
+        <header>content-type</header>
+        <header>ocp-apim-subscription-key</header>
+        <header>x-correlation-id</header>
+      </allowed-headers>
+      <expose-headers>
+        <header>x-correlation-id</header>
+      </expose-headers>
+    </cors>
+    <set-variable name="correlationId" value="@(context.Request.Headers.GetValueOrDefault(&quot;x-correlation-id&quot;, Guid.NewGuid().ToString(&quot;D&quot;)))" />
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@((string)context.Variables["correlationId"])</value>
+    </set-header>
+    <rate-limit-by-key calls="60" renewal-period="60" counter-key="@(context.Subscription?.Id ?? context.Request.IpAddress)" />
+    <quota-by-key calls="1000" renewal-period="86400" counter-key="@(context.Subscription?.Id ?? context.Request.IpAddress)" />
+  </inbound>
+  <backend>
+    <forward-request timeout="30" />
+  </backend>
+  <outbound>
+    <base />
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@((string)context.Variables["correlationId"])</value>
+    </set-header>
+  </outbound>
+  <on-error>
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@((string)context.Variables.GetValueOrDefault("correlationId", context.RequestId.ToString()))</value>
+    </set-header>
+    <return-response>
+      <set-status code="@(context.Response.StatusCode &gt;= 400 ? context.Response.StatusCode : 502)" reason="@(context.Response.StatusCode &gt;= 400 ? context.Response.StatusReason : &quot;Bad Gateway&quot;)" />
+      <set-header name="content-type" exists-action="override">
+        <value>application/json</value>
+      </set-header>
+      <set-body>@("{\"code\":\"gateway_error\",\"message\":\"The gateway could not complete the request.\",\"correlationId\":\"" + context.Variables.GetValueOrDefault("correlationId", context.RequestId.ToString()) + "\"}")</set-body>
+    </return-response>
+  </on-error>
+</policies>

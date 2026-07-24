@@ -1,0 +1,35 @@
+// APIM request evidence without request/response headers or bodies.
+// Set one or more filters. Empty strings intentionally mean "all in scoped workspace".
+let Lookback = 1h;
+let TargetResourceId = "";
+let TargetCorrelationId = "";
+let TargetApiId = "";
+let TargetOperationId = "";
+ApiManagementGatewayLogs
+| where TimeGenerated >= ago(Lookback)
+| where isempty(TargetResourceId) or _ResourceId =~ TargetResourceId
+| where isempty(TargetCorrelationId) or CorrelationId == TargetCorrelationId
+| where isempty(TargetApiId) or ApiId =~ TargetApiId
+| where isempty(TargetOperationId) or OperationId =~ TargetOperationId
+| project
+    TimeGenerated,
+    CorrelationId,
+    Region,
+    ApiId,
+    ApiRevision,
+    OperationId,
+    Method,
+    ResponseCode,
+    BackendResponseCode,
+    IsRequestSuccess,
+    TotalTime,
+    BackendTime,
+    ClientTime,
+    Cache,
+    BackendId,
+    LastErrorReason,
+    LastErrorSource,
+    LastErrorSection,
+    LastErrorMessage,
+    _ResourceId
+| order by TimeGenerated desc

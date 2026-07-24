@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "id": "waypoint-freight.disposable-baseline",
+  "version": "0.2.0",
+  "status": "candidate",
+  "entryPoint": "infra/main.bicep",
+  "modules": {
+    "br/public:avm/res/operational-insights/workspace": "0.16.0",
+    "br/public:avm/res/insights/component": "0.8.0",
+    "br/public:avm/res/web/serverfarm": "0.7.0",
+    "br/public:avm/res/web/site": "0.24.0",
+    "br/public:avm/res/api-management/service": "0.14.4",
+    "br/public:avm/res/insights/metric-alert": "0.4.1",
+    "br/public:avm/res/insights/scheduled-query-rule": "0.6.0",
+    "br/public:avm/res/insights/activity-log-alert": "0.4.2"
+  },
+  "files": [
+    {
+      "path": "azure.yaml",
+      "sha256": "2fd7a6270b7c7e2861b926d9b7887b556834b0eabffbc504735e921b9483caf5"
+    },
+    {
+      "path": "infra/main.bicep",
+      "sha256": "332105070f46037af492b29a94522657be5f2e6ee8c47a650cde6617dca95e52"
+    },
+    {
+      "path": "infra/main.parameters.json",
+      "sha256": "3a431177df97b5569aa58b2b5a866598f196e08cb6245f57b0e349fdb188f301"
+    },
+    {
+      "path": "infra/modules/waypoint-freight.bicep",
+      "sha256": "dc5641660b6cb0a70318efd655651ead56c43b29e833ac25d1e45de1f040d5f6"
+    },
+    {
+      "path": "infra/modules/application-insights-publisher-role.bicep",
+      "sha256": "d4a1a4dd691e6b558f0fb710f6233c9ddda9d31a9be1acf55375c60b7dd1837a"
+    },
+    {
+      "path": "infra/apim/waypoint-freight-policy.xml",
+      "sha256": "b1a1bc4e277c3afc2ddf3a3daa9e2de35521766db9465fff29b812e9889e8520"
+    },
+    {
+      "path": "infra/expected-inventory.json",
+      "sha256": "ba41db2368227cbf9cee7c0894e4d5849f42100fa87c2195905dfa547051bf58"
+    },
+    {
+      "path": "schemas/expected-inventory.schema.json",
+      "sha256": "2cc3f68ac821ddbc17d7041e6f293cc1ebef875d515f971bbb0e523e2f8ea8ee"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/openapi/waypoint-freight-openapi.json",
+      "sha256": "763d2e48c721907d8171dbd5b0b98ee4a5aa6768be8e56e86763903b694127a6"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/WaypointFreight.Api.csproj",
+      "sha256": "cd516cdff6dc21c5ef065005a610e2fa351e4b5980c8bbb51fc1f48f442db4f5"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/Program.cs",
+      "sha256": "63c1345ae0fd30dd9319738f6a2c1ab595902401a63d8c91d5d51804106959b9"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/Dockerfile",
+      "sha256": "09c5fb71ebd5bb719b3cca3830b64cbf9e8df48746f855f355b25f5d0c987ce0"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/.dockerignore",
+      "sha256": "2313a91b4e0a7d9bfa9baf4ba84bb58094e69008c78e8763f093377fed734a0d"
+    },
+    {
+      "path": "case-study/WaypointFreight/client/WaypointFreight.Client/wwwroot/config.js",
+      "sha256": "905fcb277f8603d788d24467b60ebdf58ebef7a6ebb1edbd6b237c0b18168fb4"
+    }
+  ],
+  "applicationPackage": {
+    "pathReference": ".azureiq/generated/waypoint-preflight/api.zip",
+    "sha256": "f2b56575a01ae55c904bf6cbfa07e9bc2b8be2814046d140fb310d90fd4aca54",
+    "entryCount": 12
+  },
+  "containerImage": {
+    "reference": "ca9329352129acr.azurecr.io/ca-wf-nter65xq:otel-20260724150824",
+    "digest": "sha256:5cea42ec1a5f6d7bb579f30a7e23b34a16f95aa2a4a4589d796474ae241e18d4",
+    "runtime": "mcr.microsoft.com/dotnet/aspnet:10.0"
+  }
+}

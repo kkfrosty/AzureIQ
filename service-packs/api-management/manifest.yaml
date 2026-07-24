@@ -1,0 +1,122 @@
+schemaVersion: 1
+
+servicePack:
+  name: api-management
+  displayName: Azure API Management
+  version: 0.1.0
+  status: draft
+  owners: []
+  reviewedAt: 2026-07-19
+  reviewExpiresAt: 2026-10-19
+
+value:
+  proofStatus: unproven
+  baselineProvider: Azure MCP and installed Azure diagnostic skills
+  baselineStatus: not-run
+  comparisonResultReference: null
+  retentionDecision: pending
+  hypotheses:
+    - id: apim-gateway-log-query-precision
+      observedGap: false
+      statement: A schema-verified service-pack query may improve APIM gateway evidence retrieval when a generic MCP-generated query selects an incorrect table, field, scope, or payload-heavy projection.
+      artifacts:
+        - queries/request-evidence.kql
+        - runbooks/unexpected-response.md
+      acceptanceCriteria:
+        - Use the correct resource-specific APIM gateway table and fields for the target workspace schema.
+        - Constrain resource, UTC window, correlation, API, and operation scope without exposing request or response payloads.
+        - Distinguish gateway, backend, policy, cache, and pre-APIM hypotheses without unsupported root-cause claims.
+        - Require fewer corrective prompts than the baseline while preserving or improving evidence completeness.
+      result: unproven
+    - id: apim-change-and-verification-safety
+      observedGap: false
+      statement: AzureIQ change planning and independent verification may reduce unsafe or unverifiable APIM policy remediation compared with an unconstrained tool-driven workflow.
+      artifacts:
+        - runbooks/unexpected-response.md
+        - ../../schemas/action-manifest.schema.json
+      acceptanceCriteria:
+        - Bind a proposed policy change to exact scope, revision, risk, approval, rollback, and expiration.
+        - Refuse execution while the repository write policy is deny.
+        - Verify the expected data-plane response and adjacent regression signals rather than relying on deployment success.
+      result: unproven
+
+azure:
+  resourceTypes:
+    - Microsoft.ApiManagement/service
+  targetResourceIds: []
+  supportedEnvironments: []
+  validatedSkus: []
+  validatedGateways: []
+  validatedApiVersions: []
+
+tooling:
+  preferred:
+    - Azure MCP diagnostics and monitoring
+    - Azure API Management VS Code extension for interactive APIM workflows
+    - Azure Resource Graph and Activity Log
+    - versioned infrastructure as code
+  fallbacks:
+    - API Management ARM REST API
+    - Azure CLI after installation and validation
+    - supervised Azure portal workflow
+  limitations:
+    - No generic API Management MCP management router was observed in the current session.
+    - No local Azure CLI, Azure Developer CLI, Bicep CLI, or Terraform CLI was observed.
+    - VS Code policy step debugging requires a Developer-tier APIM service, service-owner access, and the built-in all-access subscription under current Microsoft guidance.
+
+operability:
+  requiredDecisions:
+    - service tier and capacity model
+    - zone and multi-region topology
+    - managed versus self-hosted gateway
+    - workspace usage
+    - public or private network model
+    - identity and backend authentication model
+    - certificate and custom-domain ownership
+    - infrastructure-as-code implementation
+    - recovery objectives and promotion model
+  requiredControls:
+    - least-privilege read, change, and verify identities
+    - Key Vault for secret material
+    - versioned policies and effective-policy review
+    - revisions or equivalent safe promotion strategy
+    - dependency and backend health evidence
+    - rollback and independent data-plane verification
+
+observability:
+  discoverDiagnosticCategoriesAtRuntime: true
+  activityLogExportRequired: true
+  resourceSpecificTablesPreferred: true
+  expectedTables:
+    - ApiManagementGatewayLogs
+  applicationInsights:
+    requiredDecision: true
+    managedIdentityPreferred: true
+    bodyLoggingDefault: false
+  requestTracing:
+    externalTraceHeader: Apim-Debug-Authorization
+    traceIdResponseHeader: Apim-Trace-Id
+    legacySubscriptionTraceSupported: false
+    tokenPersistenceAllowed: false
+    workspaceSupport: unavailable-as-of-review
+
+runbooks:
+  - id: apim-unexpected-response
+    path: runbooks/unexpected-response.md
+    status: draft
+    diagnosticRiskTier: R0
+    automaticRemediationEligible: false
+
+queries:
+  - id: apim-request-evidence
+    path: queries/request-evidence.kql
+    status: draft
+sources:
+  - title: Monitor API Management
+    url: https://learn.microsoft.com/azure/api-management/monitor-api-management
+  - title: API Management request tracing
+    url: https://learn.microsoft.com/azure/api-management/api-management-howto-api-inspector
+  - title: Application Insights integration
+    url: https://learn.microsoft.com/azure/api-management/api-management-howto-app-insights
+  - title: ApiManagementGatewayLogs table
+    url: https://learn.microsoft.com/azure/azure-monitor/reference/tables/apimanagementgatewaylogs

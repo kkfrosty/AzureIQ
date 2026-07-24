@@ -1,0 +1,211 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Waypoint Freight Shipment API",
+    "description": "Synthetic shipment tracking API for the AzureIQ App Service and API Management case study.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "operationId": "GetServiceInfo",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shipments": {
+      "get": {
+        "tags": [
+          "Shipments"
+        ],
+        "operationId": "ListShipments",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShipmentSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shipments/{trackingNumber}": {
+      "get": {
+        "tags": [
+          "Shipments"
+        ],
+        "operationId": "GetShipment",
+        "parameters": [
+          {
+            "name": "trackingNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/shipments/{trackingNumber}/events": {
+      "get": {
+        "tags": [
+          "Shipments"
+        ],
+        "operationId": "GetShipmentEvents",
+        "parameters": [
+          {
+            "name": "trackingNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/test-scenarios": {
+      "get": {
+        "tags": [
+          "Test scenarios"
+        ],
+        "operationId": "ListTestScenarios",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/test-scenarios/{scenario}": {
+      "get": {
+        "tags": [
+          "Test scenarios"
+        ],
+        "operationId": "RunTestScenario",
+        "parameters": [
+          {
+            "name": "scenario",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ServiceInfo": {
+        "required": [
+          "name",
+          "version",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ShipmentStatus": {
+        "enum": [
+          "LabelCreated",
+          "InTransit",
+          "Delayed",
+          "OutForDelivery",
+          "Delivered"
+        ]
+      },
+      "ShipmentSummary": {
+        "required": [
+          "trackingNumber",
+          "origin",
+          "destination",
+          "status",
+          "estimatedDelivery",
+          "lastUpdated"
+        ],
+        "type": "object",
+        "properties": {
+          "trackingNumber": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ShipmentStatus"
+          },
+          "estimatedDelivery": {
+            "type": "string",
+            "format": "date"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Service"
+    },
+    {
+      "name": "Shipments"
+    },
+    {
+      "name": "Test scenarios"
+    }
+  ]
+}

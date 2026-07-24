@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "waypoint-freight.diagnostic-scenarios",
+  "version": "0.3.0",
+  "status": "candidate",
+  "supersedes": "waypoint-freight.disposable-baseline@0.2.0",
+  "entryPoint": "case-study/WaypointFreight/backend/WaypointFreight.Api/Program.cs",
+  "files": [
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/Program.cs",
+      "sha256": "dd182b851a47419bb6daa42ff74ae313981552fadd48592565f2774721babb5e"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/Endpoints/TestScenarioEndpoints.cs",
+      "sha256": "7944b7118450dd82431a58a6d9d440366a6aed7fa29351b5e443b26ce40dca50"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/Middleware/ApiExceptionMiddleware.cs",
+      "sha256": "28a0effb1fb6a980eae65d55a5761faeee47620400fe9add8b5df18ef5439e66"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api/openapi/waypoint-freight-openapi.json",
+      "sha256": "1871365adf09a4c721bfcb63fc2f88397106bd43f6bdee2f03a5e85a0e886670"
+    },
+    {
+      "path": "case-study/WaypointFreight/backend/WaypointFreight.Api.Tests/ShipmentApiTests.cs",
+      "sha256": "956054d44dfda4c4f06e798ed6cb8a412e6a55ef065726a407a611bfd871f0fe"
+    },
+    {
+      "path": "case-study/WaypointFreight/client/WaypointFreight.Client/wwwroot/app.js",
+      "sha256": "93203aa1b0ca031dc7944abcbb87b06a3f40bb8da96a373add98be6c693737fc"
+    },
+    {
+      "path": "case-study/WaypointFreight/client/WaypointFreight.Client/wwwroot/index.html",
+      "sha256": "26cba961eee84fec4309d67cc007f2e133f690b773d06a0e3b9658c54291f19c"
+    }
+  ],
+  "containerImage": {
+    "status": "deployed",
+    "registry": "ca9329352129acr.azurecr.io",
+    "repository": "ca-wf-nter65xq",
+    "tag": "candidate-0.3.0-20260724t155044z",
+    "digest": "sha256:6aed818042f3f106238061ed9fa3437e8499f5676434ca4c9e416fcfa3048423",
+    "runtime": "mcr.microsoft.com/dotnet/aspnet:10.0"
+  },
+  "validation": {
+    "tests": 15,
+    "openApiPathCount": 6,
+    "scenarioStatuses": [
+      200,
+      404,
+      409,
+      429,
+      500,
+      503,
+      504
+    ],
+    "secretsStored": false,
+    "rawPayloadLogging": false,
+    "liveVerification": {
+      "containerRevision": "ca-wf-nter65xq--0000003",
+      "apimOperationCount": 6,
+      "gatewayScenarioStatuses": [
+        200,
+        404,
+        409,
+        429,
+        500,
+        503,
+        504
+      ],
+      "backendExceptionTelemetry": true,
+      "directBackendStatus": 403,
+      "anonymousApimStatus": 401,
+      "resourceInventoryUnchanged": true
+    }
+  }
+}

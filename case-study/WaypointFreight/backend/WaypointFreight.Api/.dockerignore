@@ -1,0 +1,5 @@
+bin/
+obj/
+openapi/
+*.user
+*.suo
