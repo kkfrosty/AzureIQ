@@ -10,7 +10,10 @@ services:
   api:
     project: ./case-study/WaypointFreight/backend/WaypointFreight.Api
     language: dotnet
-    host: appservice
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
 
 hooks:
   preprovision:

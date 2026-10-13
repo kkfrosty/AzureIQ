@@ -1,12 +1,12 @@
-# Service Pack Contract
+# Support Domain Contract
 
-A service pack gives AzureIQ service-specific operating knowledge without expanding the global instructions or a general agent indefinitely.
+A support domain gives AzureIQ service-specific operating knowledge without expanding the global instructions or a general agent indefinitely.
 
-Reusable files within a service pack must also be registered in `artifacts/catalog.json` before they drive a mutation or are selected as trusted knowledge. The service-pack manifest owns domain grouping; the artifact catalog owns exact version, digest, compatibility, decision points, validation freshness, and supersession.
+Reusable files within a support domain must also be registered in `artifacts/catalog.json` before they drive a mutation or are selected as trusted knowledge. The support-domain manifest owns domain grouping; the artifact catalog owns exact version, digest, compatibility, decision points, validation freshness, and supersession.
 
 ## Admission Gate
 
-Do not create a service pack merely because AzureIQ might manage the service later. First run a representative inventory, diagnosis, change-planning, or verification scenario with Azure MCP and the installed Azure skill set alone.
+Do not create a support domain merely because AzureIQ might manage the service later. First run a representative inventory, diagnosis, change-planning, or verification scenario with Azure MCP and the installed Azure skill set alone.
 
 Admit an artifact only when the pack records:
 
@@ -22,7 +22,7 @@ An artifact may be drafted before the baseline run only when clearly labeled `un
 ## Layout
 
 ```text
-service-packs/<service-name>/
+support-domains/<service-name>/
 |-- manifest.yaml
 |-- README.md
 |-- baselines/
@@ -40,7 +40,7 @@ Only create directories the service needs. Keep scripts and queries executable o
 
 `manifest.yaml` should contain:
 
-- schema version, service-pack version, status, owners, and review date;
+- schema version, support-domain version, status, owners, and review date;
 - value proof status, baseline provider/status, gap IDs, artifact references, acceptance criteria, result references, and retention decision;
 - Azure resource type strings and supported deployment/API versions;
 - environments, criticality, data classification, and compliance scope;

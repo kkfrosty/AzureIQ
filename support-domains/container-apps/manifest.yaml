@@ -1,0 +1,42 @@
+schemaVersion: 1
+
+supportDomain:
+  name: container-apps
+  displayName: Azure Container Apps
+  version: 0.1.0
+  status: observed
+  owners: []
+  reviewedAt: 2026-07-24
+  reviewExpiresAt: 2026-10-24
+
+value:
+  proofStatus: value-demonstrated
+  baselineProvider: Azure MCP and installed Azure diagnostic skills
+  baselineStatus: completed
+  comparisonResultReference: live APIM-to-Container-Apps troubleshooting scenario on 2026-07-24
+  retentionDecision: keep
+
+azure:
+  resourceTypes:
+    - Microsoft.App/containerApps
+    - Microsoft.App/managedEnvironments
+
+observability:
+  expectedTables:
+    - ContainerAppSystemLogs_CL
+  workspaceNote: Resolve the managed-environment workspace independently from gateway and application telemetry workspaces.
+
+queries:
+  - id: container-apps-platform-evidence
+    path: queries/platform-evidence.kql
+    status: observed
+
+collaborations:
+  - pack: api-management
+    purpose: Explain backend platform behavior after gateway evidence implicates the backend.
+  - pack: azure-monitor
+    purpose: Correlate platform events with request, dependency, exception, and trace spans.
+
+sources:
+  - title: Azure Container Apps monitoring
+    url: https://learn.microsoft.com/azure/container-apps/observability

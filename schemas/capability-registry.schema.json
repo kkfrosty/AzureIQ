@@ -103,7 +103,7 @@
       "properties": {
         "kind": {
           "type": "string",
-          "enum": ["mcp", "extension-tool", "service-pack", "azureiq-cli", "skill", "composite"]
+          "enum": ["mcp", "extension-tool", "support-domain", "azureiq-cli", "skill", "composite"]
         },
         "selector": { "type": "string", "minLength": 1 },
         "operation": { "type": "string", "minLength": 1 },

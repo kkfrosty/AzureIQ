@@ -37,7 +37,7 @@ This ledger is intentionally candid. It describes the environment observed on 20
 
 - Workspace instructions, custom agents, skills, prompts, and hooks using supported Copilot customization files.
 - Read-only discovery and evidence gathering through Azure MCP and existing extensions.
-- Versioned service packs, KQL queries, policy templates, IaC, runbooks, action schemas, tests, and incident templates.
+- Versioned support domains, KQL queries, policy templates, IaC, runbooks, action schemas, tests, and incident templates.
 - Supervised deployments and remediations through supported MCP operations or installed CLIs after explicit approval.
 - Portal fallback through interactive browser tools for gaps that cannot be closed through a supported API.
 - A hosted Azure operations runtime using standard Azure services and APIs.

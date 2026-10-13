@@ -28,14 +28,14 @@ See [Current Architecture](docs/current-architecture.md) for the implemented inv
 | `capabilities/` | Machine-readable routing overlays for tool gaps, corroboration, fallback, maturity, and verification |
 | `artifacts/` | Versioned reusable asset catalog with compatibility, decisions, digests, validation, and supersession |
 | `docs/` | Architecture, decisions, roadmap, and memory model |
-| `service-packs/` | Service-specific baselines, queries, alerts, and runbooks |
+| `support-domains/` | Service-specific baselines, queries, alerts, and runbooks |
 | `incidents/` | Sanitized incident records and learned outcomes |
 | `infra/` | Future control-plane and observability infrastructure as code |
 | `src/AzureIQ.Execution/` | Tested Azure SDK mutation adapters for gaps not covered by Azure MCP |
 
 ## How To Use AzureIQ
 
-Describe the outcome or symptom in ordinary GitHub Copilot Agent mode. The always-on workspace instructions classify the request and invoke hidden AzureIQ specialists, relevant skills, service packs, and Azure MCP tools. Users do not need to know their names.
+Describe the outcome or symptom in ordinary GitHub Copilot Agent mode. The always-on workspace instructions classify the request and invoke hidden AzureIQ specialists, relevant skills, support domains, and Azure MCP tools. Users do not need to know their names.
 
 `AzureIQ Orchestrator` is the single optional dedicated agent mode. It provides the same automatic routing with a focused AzureIQ interaction contract. Inventory, incident, planning, verification, and skill customizations are intentionally hidden from user selection.
 
@@ -45,7 +45,7 @@ Routing is model-directed and therefore best-effort, not a workflow or authoriza
 
 The first commissioning milestone is read-only: establish tenant and subscription scope, inventory resources and dependencies, assess telemetry coverage, and select management paths. The first operational milestone is a non-production supervised vertical slice that creates or configures a service, enables its telemetry, validates behavior, and proves rollback and independent verification.
 
-The initial [API Management service pack](service-packs/api-management/README.md) is deliberately `draft` and `unproven`. It includes a payload-minimized gateway query and an unexpected-response runbook grounded in current Microsoft guidance, but it has not been validated against a live APIM resource or shown to outperform plain Azure MCP.
+The [API Management support domain](support-domains/api-management/README.md) is `observed` and `value-demonstrated` for the validated Developer-tier APIM and Container Apps case study. Azure Monitor and Container Apps own the cross-service trace and backend-platform evidence it collaborates with.
 
 ## Case Study
 
@@ -72,4 +72,4 @@ Run the workspace contract check locally:
 ./scripts/Test-Workspace.ps1
 ```
 
-The same check runs for pull requests and pushes to `main`. It validates required files, the single visible Orchestrator, hidden model-routable specialists, automatic-only skills, service-pack value metadata, JSON parsing, local documentation links, forbidden sensitive artifact types, and operating-mode consistency. Bootstrap requires denied writes; supervised management requires configured scope, principal, IaC, telemetry, approval, and no automatic risk tiers. It does not validate live Azure access, RBAC, KQL against a workspace, complete YAML semantics, model routing behavior, or service outcomes.
+The same check runs for pull requests and pushes to `main`. It validates required files, the single visible Orchestrator, hidden model-routable specialists, automatic-only skills, support-domain value metadata, JSON parsing, local documentation links, forbidden sensitive artifact types, and operating-mode consistency. Bootstrap requires denied writes; supervised management requires configured scope, principal, IaC, telemetry, approval, and no automatic risk tiers. It does not validate live Azure access, RBAC, KQL against a workspace, complete YAML semantics, model routing behavior, or service outcomes.

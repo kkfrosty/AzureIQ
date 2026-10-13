@@ -1,0 +1,45 @@
+schemaVersion: 1
+
+supportDomain:
+  name: azure-monitor
+  displayName: Azure Monitor and Application Insights
+  version: 0.1.0
+  status: observed
+  owners: []
+  reviewedAt: 2026-07-24
+  reviewExpiresAt: 2026-10-24
+
+value:
+  proofStatus: value-demonstrated
+  baselineProvider: Azure MCP and installed Azure diagnostic skills
+  baselineStatus: completed
+  comparisonResultReference: live distributed-trace troubleshooting scenario on 2026-07-24
+  retentionDecision: keep
+
+azure:
+  resourceTypes:
+    - Microsoft.Insights/components
+    - Microsoft.OperationalInsights/workspaces
+
+observability:
+  expectedTables:
+    - AppRequests
+    - AppDependencies
+    - AppExceptions
+    - AppTraces
+  correlationKey: OperationId
+
+queries:
+  - id: distributed-trace-correlation
+    path: queries/distributed-trace-correlation.kql
+    status: observed
+
+collaborations:
+  - pack: api-management
+    purpose: Correlate gateway Application Insights spans with backend spans.
+  - pack: container-apps
+    purpose: Correlate application spans with revision, replica, and scaling evidence.
+
+sources:
+  - title: Application Insights data model
+    url: https://learn.microsoft.com/azure/azure-monitor/app/data-model-complete

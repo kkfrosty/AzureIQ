@@ -15,7 +15,7 @@ This document describes what exists now. [architecture.md](architecture.md) desc
 | Platform tools | Azure MCP, AppLens, Monitor, Application Insights, Resource Health, Resource Graph, service extensions, PostgreSQL extension MCP, and other installed tools | GHC receives first-class tool names, descriptions, and JSON schemas directly from MCP servers/extensions | Dynamic platform baseline |
 | Capability overlays | `capabilities/registry.json` | GHC matches intent after live tool discovery and applies known limits, evidence requirements, fallbacks, maturity, and verification | Initial registry available |
 | Reusable artifact memory | `artifacts/catalog.json` plus versioned source | GHC searches before generation, checks compatibility/decision points/digests, and selects or versions existing assets | Initial catalog with three assets |
-| Service knowledge | API Management service pack with KQL and unexpected-response runbook | Loaded only for relevant APIM work; augments platform evidence | Draft and value-unproven |
+| Service knowledge | API Management support domain with KQL and unexpected-response runbook | Loaded only for relevant APIM work; augments platform evidence | Draft and value-unproven |
 | Local mutations | `src/AzureIQ.Execution`, a shared .NET Azure SDK CLI | GHC invokes registered subcommands through the terminal tool with explicit parameters and JSON output | Resource Group ensure operation proven |
 | Local scripts | `scripts/Test-Workspace.ps1` only | CI and local structural/privacy validation; it is not an Azure mutation tool | Available |
 | Private scope | Ignored `config/local.azureiq.json` | Shared CLI and instructions use it to constrain tenant/subscription without exposing identifiers in Git | Available on this machine |
@@ -32,7 +32,7 @@ This document describes what exists now. [architecture.md](architecture.md) desc
 4. If an overlay exists, GHC applies its limitations, required evidence, fallback, maturity, and verification rules.
 5. GHC searches [the artifact catalog](../artifacts/catalog.json), checks compatibility, validation freshness, source digest, and decision points, then reuses or versions an existing asset before generating another.
 6. The Orchestrator invokes dynamic service-specific tools itself when a restricted hidden specialist does not have that tool, then delegates minimized structured evidence for analysis.
-7. Relevant skills and service packs load progressively.
+7. Relevant skills and support domains load progressively.
 8. For an approved mutation, GHC binds exact artifact versions/digests and uses the preferred MCP operation, IaC, or a registered shared-CLI operation.
 9. The verifier checks control-plane and data-plane outcomes independently and requires a sanitized run record.
 
@@ -51,7 +51,7 @@ For incident diagnosis, AzureIQ therefore treats detector output as a candidate 
 - effective identity, policy, quota, network, DNS, and dependency state;
 - a known-good comparison and a check capable of disproving the leading cause.
 
-A service pack adds value when repeated incidents expose a detector or generic-query gap and the pack supplies a tested query, decision point, or verification that measurably improves the baseline. It should be retired when it does not.
+A support domain adds value when repeated incidents expose a detector or generic-query gap and the domain supplies a tested query, decision point, or verification that measurably improves the baseline. It should be retired when it does not.
 
 ## How Local Code Becomes Usable By GHC
 
@@ -81,7 +81,7 @@ The MCP server should be a thin transport over the same operation implementation
 - Hidden specialists intentionally do not receive every Azure MCP router; the Orchestrator must collect evidence from dynamic tools they lack.
 - Only Resource Group ensure has a proven local mutation path.
 - The generic generated-package coding engine and declarative validate/what-if/apply/teardown adapters are designed but not implemented. The Resource Group handler remains a proof to retire, not a pattern to multiply.
-- APIM service-pack value remains unproven against a live baseline comparison.
+- APIM support-domain value remains unproven against a live baseline comparison.
 - No hosted event pipeline, durable incident state, policy engine, approval service, or always-on managed identity exists.
 - The current action-manifest schema is not yet bound cryptographically to execution.
 - Execution-record writing is instructed but not yet enforced automatically by the execution host or hosted runtime.
@@ -92,9 +92,9 @@ Build the case study defined in [.azure/deployment-plan.md](../.azure/deployment
 
 1. raw Azure MCP/AppLens behavior;
 2. registry-directed corroboration;
-3. service-pack augmentation where applicable;
+3. support-domain augmentation where applicable;
 4. independent verification quality.
 
 Keep only overlays and artifacts that improve factual accuracy, scope safety, evidence completeness, repeatability, or operator effort.
 
-Do not expand the capability registry, artifact catalog, service packs, local CLI, or hosted architecture ahead of a case-study need. Existing contracts are provisional and may be simplified when the vertical slice provides evidence.
+Do not expand the capability registry, artifact catalog, support domains, local CLI, or hosted architecture ahead of a case-study need. Existing contracts are provisional and may be simplified when the vertical slice provides evidence.

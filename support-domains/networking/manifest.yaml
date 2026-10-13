@@ -1,0 +1,23 @@
+schemaVersion: 1
+
+supportDomain:
+  name: networking
+  displayName: Azure Networking
+  version: 0.1.0
+  status: draft
+  owners: []
+  reviewedAt: 2026-07-24
+  reviewExpiresAt: 2026-10-24
+
+value:
+  proofStatus: unproven
+  baselineProvider: Azure MCP and installed Azure network diagnostic skills
+  baselineStatus: not-run
+  comparisonResultReference: null
+  retentionDecision: pending
+
+azure:
+  resourceTypes:
+    - Microsoft.Network/*
+
+collaborationRole: Coordinate end-to-end path evidence while delegating product-specific ownership to focused packs as they mature.

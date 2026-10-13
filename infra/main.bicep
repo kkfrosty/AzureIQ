@@ -22,6 +22,9 @@ param createdAt string
 @description('UTC expiry time recorded in lifecycle tags.')
 param expiresAt string
 
+@description('Container image for the API. Defaults to a public placeholder that the application deployment step replaces.')
+param apiImage string = 'mcr.microsoft.com/k8se/quickstart:latest'
+
 var ownershipTags = {
   'azd-env-name': environmentName
   managedBy: 'AzureIQ'
@@ -45,6 +48,7 @@ module waypointFreight './modules/waypoint-freight.bicep' = {
     name: environmentName
     location: location
     publisherEmail: publisherEmail
+    apiImage: apiImage
     tags: ownershipTags
   }
 }
@@ -92,10 +96,11 @@ resource activityLogDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-0
 
 output AZURE_RESOURCE_GROUP string = environmentResourceGroup.name
 output AZURE_LOCATION string = location
-output SERVICE_API_NAME string = waypointFreight.outputs.appServiceName
+output SERVICE_API_NAME string = waypointFreight.outputs.containerAppName
 output API_URL string = waypointFreight.outputs.gatewayApiUrl
 output APIM_GATEWAY_URL string = waypointFreight.outputs.gatewayApiUrl
-output APP_SERVICE_URL string = waypointFreight.outputs.appServiceUrl
+output CONTAINER_APP_URL string = waypointFreight.outputs.containerAppUrl
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = waypointFreight.outputs.containerRegistryLoginServer
 output AZURE_LOG_ANALYTICS_WORKSPACE_ID string = waypointFreight.outputs.logAnalyticsResourceId
 output APPLICATION_INSIGHTS_NAME string = waypointFreight.outputs.applicationInsightsName
 output API_MANAGEMENT_NAME string = waypointFreight.outputs.apiManagementName

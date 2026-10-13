@@ -63,7 +63,7 @@ Missing telemetry is an onboarding failure unless an explicit risk exception is 
 
 ### 5. Build operations knowledge
 
-Create or update the service pack defined in [service pack contract](./references/service-pack-contract.md). Include discovery queries, known-good baselines, dashboards, alerts, failure signatures, diagnostic trees, bounded runbooks, rollback, and verification.
+Create or update the support domain defined in [support domain contract](./references/support-domain-contract.md). Include discovery queries, known-good baselines, dashboards, alerts, failure signatures, diagnostic trees, bounded runbooks, rollback, and verification.
 
 ### 6. Validate
 
@@ -88,7 +88,7 @@ Return an onboarding report with `READY`, `CONDITIONALLY_READY`, or `NOT_READY`,
 - current and desired state;
 - telemetry and operability coverage;
 - risks and permission gaps;
-- proposed service-pack files;
+- proposed support-domain files;
 - exact changes requiring approval;
 - validation evidence and remaining tests;
 - candidates for future bounded automation.

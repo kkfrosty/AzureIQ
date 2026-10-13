@@ -67,6 +67,6 @@ The Microsoft PostgreSQL VS Code extension (`ms-ossdata.vscode-pgsql`) contribut
 
 The extension also contributes fallback language-model tools when its MCP server is unavailable. AzureIQ must use the extension's MCP/tool surface before considering any PostgreSQL implementation.
 
-There is no AzureIQ PostgreSQL executor, script, or service pack. Add a PostgreSQL operation to the shared AzureIQ host only after a specific unsupported action is reproduced against the extension-contributed tools and the shared-tool admission checks pass.
+There is no AzureIQ PostgreSQL executor, script, or support domain. Add a PostgreSQL operation to the shared AzureIQ host only after a specific unsupported action is reproduced against the extension-contributed tools and the shared-tool admission checks pass.
 
 A startup `ECONNREFUSED` against `127.0.0.1:<ephemeral-port>` can occur if VS Code probes before the extension service is ready. Treat it as transient when a subsequent start reaches `Discovered <n> tools`. Treat it as a fault only when retries do not reach tool discovery or PostgreSQL tools fail when invoked. Never hardcode or monitor a historical loopback port.

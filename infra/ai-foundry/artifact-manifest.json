@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "ai-foundry.gateway-baseline",
+  "version": "0.1.0",
+  "status": "candidate",
+  "entryPoint": "infra/ai-foundry/main.bicep",
+  "modules": {
+    "br/public:avm/res/operational-insights/workspace": "0.16.0",
+    "br/public:avm/res/insights/component": "0.8.0",
+    "br/public:avm/res/cognitive-services/account": "0.16.0",
+    "br/public:avm/res/api-management/service": "0.14.4",
+    "br/public:avm/res/insights/metric-alert": "0.4.1"
+  },
+  "files": [
+    {
+      "path": "infra/ai-foundry/main.bicep",
+      "sha256": "1c9c02868981b8e25c07f768404f6c092e608cd04d1473b663e870d3967cf8d6"
+    },
+    {
+      "path": "infra/ai-foundry/modules/ai-foundry-gateway.bicep",
+      "sha256": "0a53b48965d154f876f0e5cac0ece1fde9a3ce8dff1b279b9de4169fcd4c7ff6"
+    },
+    {
+      "path": "infra/ai-foundry/modules/cognitive-services-user-role.bicep",
+      "sha256": "dcdf20ee5ae5415785fd3576b94341d72d574582f554fecbe371b23f371d00ef"
+    },
+    {
+      "path": "infra/ai-foundry/api/ai-chat-openapi.json",
+      "sha256": "329ebf344790be1a7c48ad29f44e811fc517bd1a8eb7cb6d869486f16bda6a94"
+    },
+    {
+      "path": "infra/ai-foundry/api/ai-gateway-policy.xml",
+      "sha256": "4bedf70cd272615e1aae539d7bdbad1b7db1ab7b9adf676ec3a7db0f7cb96b6d"
+    },
+    {
+      "path": "infra/ai-foundry/expected-inventory.json",
+      "sha256": "6be87d163d8d0f7176c6e0f45ef417f184669d05e94e6aab792c374d4f9b3045"
+    },
+    {
+      "path": "case-study/WaypointFreight/client/WaypointFreight.Client/wwwroot/chat.html",
+      "sha256": "92e6f1e3a1f7139f9b12d85d6cba42440ac8e09de3bf9f2ebb97cbb8a2c21a02"
+    },
+    {
+      "path": "case-study/WaypointFreight/client/WaypointFreight.Client/wwwroot/chat.js",
+      "sha256": "a1d52868f56d58dcaac9833c4cd04252e7f2dbb2697e32866f7841b4f1edb268"
+    },
+    {
+      "path": "case-study/WaypointFreight/client/WaypointFreight.Client/wwwroot/chat-config.js",
+      "sha256": "c5af34f1ed05290336a03ea50ccd7771b5d0117c786270d365594516ba94c95f"
+    },
+    {
+      "path": "case-study/WaypointFreight/client/WaypointFreight.Client/wwwroot/chat.css",
+      "sha256": "236a47fdf3b1193c886a2098fde2b7d81e34d73a7f759745cfde9f13b1deea49"
+    }
+  ],
+  "modelDeployments": [
+    {
+      "name": "gpt-5.4-mini",
+      "version": "2026-03-17",
+      "sku": "GlobalStandard",
+      "capacity": 50
+    },
+    {
+      "name": "gpt-5.4-nano",
+      "version": "2026-03-17",
+      "sku": "GlobalStandard",
+      "capacity": 50
+    }
+  ],
+  "validation": {
+    "bicepBuild": "passed",
+    "bicepLint": "passed",
+    "armSubscriptionValidate": "Succeeded",
+    "inventorySchema": "passed",
+    "localAuthDisabled": true,
+    "gatewayAuth": "managed-identity",
+    "secretsStored": false,
+    "liveVerification": {
+      "deploymentState": "Succeeded",
+      "inventoryExactMatch": true,
+      "ownershipTagMismatches": 0,
+      "modelDeploymentsSucceeded": 2,
+      "gatewayRoleAssignments": 1,
+      "gatewayRoleScope": "ai-foundry-account",
+      "chatCompletionStatus": 200,
+      "anonymousRequestStatus": 401,
+      "tokenGovernanceHeadersPresent": true
+    }
+  }
+}

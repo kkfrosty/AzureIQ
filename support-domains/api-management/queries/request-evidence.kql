@@ -1,5 +1,8 @@
 // APIM request evidence without request/response headers or bodies.
 // Set one or more filters. Empty strings intentionally mean "all in scoped workspace".
+// CorrelationId here is the gateway request identifier. It is NOT the Application Insights
+// OperationId and usually NOT the client's own correlation header. Use the Azure Monitor
+// support domain's distributed-trace-correlation.kql to join instrumented hops by OperationId.
 let Lookback = 1h;
 let TargetResourceId = "";
 let TargetCorrelationId = "";
@@ -11,6 +14,7 @@ ApiManagementGatewayLogs
 | where isempty(TargetCorrelationId) or CorrelationId == TargetCorrelationId
 | where isempty(TargetApiId) or ApiId =~ TargetApiId
 | where isempty(TargetOperationId) or OperationId =~ TargetOperationId
+| extend RequestPath = tostring(parse_url(Url).Path)
 | project
     TimeGenerated,
     CorrelationId,
@@ -19,6 +23,7 @@ ApiManagementGatewayLogs
     ApiRevision,
     OperationId,
     Method,
+    RequestPath,
     ResponseCode,
     BackendResponseCode,
     IsRequestSuccess,
@@ -33,3 +38,8 @@ ApiManagementGatewayLogs
     LastErrorMessage,
     _ResourceId
 | order by TimeGenerated desc
+// BackendResponseCode is the primary localization field:
+//   populated and equal to ResponseCode  => APIM relayed the backend outcome.
+//   populated and different              => outbound/on-error policy, cache, or gateway handling changed it.
+//   empty on a real client request       => APIM answered before calling the backend.
+//   empty on an OPTIONS row              => CORS preflight answered by policy; expected, not a failure.

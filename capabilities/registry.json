@@ -6,7 +6,7 @@
     "defaultSelectionOrder": [
       "installed Azure MCP or extension tool",
       "installed Azure skill",
-      "service-pack evidence or procedure",
+      "support-domain evidence or procedure",
       "declarative IaC",
       "proven AzureIQ CLI operation",
       "ARM REST or supervised browser fallback"
@@ -32,7 +32,12 @@
       "limitations": [
         "AppLens detector coverage and hypotheses vary by Azure service and detector implementation.",
         "A detector recommendation is candidate evidence, not proof of root cause or recovery.",
-        "Required logs may be absent, delayed, sampled, expired, or inaccessible."
+        "Required logs may be absent, delayed, sampled, expired, or inaccessible.",
+        "Verified 2026-07-24: the installed AppLens tool exposes one conversational diagnose command and no enumerable detector list, and reports support only for microsoft.web/sites, microsoft.containerservice/managedclusters, and microsoft.apimanagement/service.",
+        "Verified 2026-07-24: AppLens failed twice for a Developer-tier API Management service with 'Failed to create diagnostics session ... BadRequest'; attempt it first, record the failure as an evidence gap, and continue to telemetry.",
+        "Verified 2026-07-24: Azure Container Apps supports neither AppLens diagnosis nor Resource Health here, which returned 422; substitute managed-environment system logs, revision state, and Application Insights.",
+        "Verified 2026-07-24: the dedicated activity-log command can fail on credentials or DNS while Azure Monitor log queries still succeed, and exported AzureActivity may hold no rows; neither outcome is evidence that no change occurred.",
+        "Verified 2026-07-24: a natural-language Azure Resource Graph request can be mistranslated into an unrelated query, so confirm the returned KQL before treating zero rows as topology evidence."
       ],
       "requiredEvidence": [
         "Resource Health and relevant Service Health evidence",
@@ -40,12 +45,13 @@
         "Azure Monitor metrics and service-specific logs",
         "Application Insights request, dependency, exception, and trace evidence when applicable",
         "effective configuration, identity, policy, network, quota, and dependency state",
+        "detector attempts and outcomes, including unsupported resource types and failed sessions",
         "a falsifiable cause hypothesis with contradictory evidence and a disproving check"
       ],
       "fallback": {
         "kind": "skill",
         "selector": "azureiq-incident-response",
-        "operation": "evidence-driven diagnosis using service pack and available Azure read tools"
+        "operation": "evidence-driven diagnosis using support domain and available Azure read tools"
       },
       "verification": [
         "Use AzureIQ Verifier after recovery or remediation.",
@@ -141,37 +147,45 @@
         "distinguish APIM policy, backend, cache, gateway, or pre-APIM failure"
       ],
       "owner": "composite",
-      "status": "draft",
-      "valueProof": "unproven",
+      "status": "gap-confirmed",
+      "valueProof": "value-demonstrated",
       "primary": {
-        "kind": "composite",
-        "selector": "AppLens and Azure Monitor baseline plus APIM service-pack evidence",
-        "operation": "unexpected-response diagnosis"
+        "kind": "support-domain",
+        "selector": "support-domains/api-management",
+        "operation": "runbooks/unexpected-response.md after an AppLens attempt, collaborating with Azure Monitor distributed trace correlation and backend-owned platform evidence"
       },
       "limitations": [
-        "The APIM service-pack query and runbook have not yet demonstrated value over the Azure MCP baseline on a live APIM incident.",
-        "External request tracing is version, gateway, workspace, permission, and data-sensitivity dependent."
+        "Verified 2026-07-24: AppLens produced no usable evidence for this scenario, failing twice for the APIM resource and not supporting the Container Apps backend, so the detector baseline cannot localize the response stage on its own.",
+        "Azure MCP monitoring can reach the same conclusion, but only after selecting the correct workspace, resource-specific tables, and join key; the pack exists to record those choices, not to replace the tool.",
+        "Gateway logs, Application Insights, and backend platform logs may live in different workspaces in the same resource group.",
+        "Gateway CorrelationId, Application Insights OperationId, and any client-supplied correlation header are distinct identifier spaces; joining across them by the wrong key returns nothing.",
+        "External request tracing is version, gateway, workspace, permission, and data-sensitivity dependent.",
+        "Validated only against one Developer-tier managed-gateway service with a Container Apps backend; self-hosted gateways, workspaces, and other backends remain unvalidated."
       ],
       "requiredEvidence": [
-        "APIM gateway log record scoped by UTC time, resource, API, operation, and correlation ID when available",
-        "backend response and telemetry correlation",
+        "APIM gateway log record scoped by absolute UTC time, resource, API, and operation, with ResponseCode and BackendResponseCode",
+        "Application Insights request, dependency, and exception spans joined to the gateway hop by OperationId",
+        "backend platform evidence for latency, restarts, scaling, or availability when the backend is implicated",
         "effective policy, revision, backend, cache, identity, network, and recent-change state",
+        "explicit determination of whether the failing path is a synthetic or fault-injection endpoint",
         "known-good comparison path"
       ],
       "fallback": {
-        "kind": "service-pack",
-        "selector": "service-packs/api-management",
-        "operation": "runbooks/unexpected-response.md with queries/request-evidence.kql"
+        "kind": "mcp",
+        "selector": "mcp_azure_mcp_ser_monitor",
+        "operation": "monitor_workspace_log_query against the workspace owning each table"
       },
       "verification": [
         "Compare final gateway behavior with backend behavior and expected API contract.",
         "Check adjacent operations, revisions, regions, and dependencies for regression.",
-        "Keep, revise, or retire the service-pack artifacts after the baseline comparison."
+        "Keep, revise, or retire the support-domain artifacts after each baseline comparison."
       ],
       "references": [
-        "../service-packs/api-management/manifest.yaml",
-        "../service-packs/api-management/runbooks/unexpected-response.md",
-        "../service-packs/api-management/queries/request-evidence.kql"
+        "../support-domains/api-management/manifest.yaml",
+        "../support-domains/api-management/runbooks/unexpected-response.md",
+        "../support-domains/api-management/queries/request-evidence.kql",
+        "../support-domains/azure-monitor/queries/distributed-trace-correlation.kql",
+        "../support-domains/container-apps/queries/platform-evidence.kql"
       ]
     }
   ]

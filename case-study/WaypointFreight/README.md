@@ -26,7 +26,9 @@ dotnet run --project ./client/WaypointFreight.Client
 
 Open `http://localhost:5265`. The API defaults to `http://localhost:5083`.
 
-The checked-in browser client currently targets the deployed APIM gateway at `https://apim-wf-nter65xq.azure-api.net/waypoint`. Enter the APIM subscription key at runtime; it is never stored in source.
+The checked-in browser client targets the local API by default. To use a deployed gateway, enter its URL in the **API base URL** field and its APIM subscription key at runtime. Do not put deployment-specific URLs or keys in checked-in configuration.
+
+Open `/chat.html` on the client to use the AI assistant. Its gateway URL is intentionally blank: enter the deployed gateway URL (ending in `/ai`) and subscription key in the page before sending a message. The shipment and chat connection fields are held in page memory only and must be re-entered after a reload; they are not persisted to browser storage or source.
 
 ## Validate
 

@@ -6,7 +6,7 @@ An overlay exists only when AzureIQ must record one or more of:
 
 - a confirmed platform-tool gap and proven local fallback;
 - required evidence that must corroborate a detector or diagnostic result;
-- customer-specific service-pack knowledge;
+- customer-specific support-domain knowledge;
 - a maturity or value-proof warning;
 - mandatory independent verification;
 - an extension-owned tool surface whose ownership could otherwise be confused with repository code.
@@ -17,7 +17,7 @@ An overlay exists only when AzureIQ must record one or more of:
 2. Search live MCP and extension tool descriptions.
 3. Check this registry for a matching overlay.
 4. Use the overlay to constrain evidence, fallback, maturity, and verification.
-5. Load referenced skills or service packs progressively.
+5. Load referenced skills or support domains progressively.
 6. For local CLI operations, run `operations list` and use only the registered operation and parameters.
 7. Never treat registry presence as approval to mutate Azure.
 

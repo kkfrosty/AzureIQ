@@ -14,9 +14,16 @@ param publisherEmail string
 @description('Ownership and lifecycle tags inherited from the environment boundary.')
 param tags object = {}
 
+@description('Container image for the API. The public placeholder is replaced by the built application image during deployment.')
+param apiImage string = 'mcr.microsoft.com/k8se/quickstart:latest'
+
+@description('Enable the protected diagnostic scenario endpoints on this disposable backend.')
+param enableTestScenarios bool = true
+
 var resourceSuffix = take(uniqueString(subscription().id, resourceGroup().id, name, location), 8)
-var appServicePlanName = 'asp-wf-${resourceSuffix}'
-var appServiceName = 'app-wf-${resourceSuffix}'
+var containerRegistryName = 'acrwf${resourceSuffix}'
+var managedEnvironmentName = 'cae-wf-${resourceSuffix}'
+var containerAppName = 'ca-wf-${resourceSuffix}'
 var apiManagementName = 'apim-wf-${resourceSuffix}'
 var logAnalyticsName = 'log-wf-${resourceSuffix}'
 var applicationInsightsName = 'appi-wf-${resourceSuffix}'
@@ -33,6 +40,13 @@ union isfuzzy=true
 | where TimeGenerated >= ago(15m)
 | summarize TelemetryCount = count()
 '''
+var backendServerErrorQuery = replace('''
+AppRequests
+| where TimeGenerated >= ago(5m)
+| where AppRoleName =~ '__CONTAINER_APP__'
+| where ResultCode startswith '5'
+| summarize ServerErrors = count()
+''', '__CONTAINER_APP__', containerAppName)
 var openApiDocument = union(
   loadJsonContent('../../case-study/WaypointFreight/backend/WaypointFreight.Api/openapi/waypoint-freight-openapi.json'),
   {
@@ -49,7 +63,8 @@ module logAnalytics 'br/public:avm/res/operational-insights/workspace:0.16.0' = 
     dataRetention: 30
     dailyQuotaGb: '1'
     features: {
-      disableLocalAuth: true
+      // The Container Apps environment log agent authenticates with the workspace shared key.
+      disableLocalAuth: false
       enableLogAccessUsingOnlyResourcePermissions: true
       immediatePurgeDataOn30Days: true
     }
@@ -78,28 +93,29 @@ module applicationInsights 'br/public:avm/res/insights/component:0.8.0' = {
   }
 }
 
-module appServicePlan 'br/public:avm/res/web/serverfarm:0.7.0' = {
-  name: 'app-service-plan'
+module containerRegistry 'br/public:avm/res/container-registry/registry:0.12.1' = {
+  name: 'container-registry'
   params: {
-    name: appServicePlanName
+    name: containerRegistryName
     location: location
-    kind: 'linux'
-    reserved: true
-    skuCapacity: 1
-    skuName: 'B1'
+    acrSku: 'Basic'
+    acrAdminUserEnabled: false
+    publicNetworkAccess: 'Enabled'
     tags: tags
+  }
+}
+
+module managedEnvironment 'br/public:avm/res/app/managed-environment:0.14.0' = {
+  name: 'container-apps-environment'
+  params: {
+    name: managedEnvironmentName
+    location: location
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsWorkspaceResourceId: logAnalytics.outputs.resourceId
+    }
     zoneRedundant: false
-    diagnosticSettings: [
-      {
-        name: 'send-to-log-analytics'
-        workspaceResourceId: logAnalytics.outputs.resourceId
-        metricCategories: [
-          {
-            category: 'AllMetrics'
-          }
-        ]
-      }
-    ]
+    tags: tags
   }
 }
 
@@ -168,7 +184,7 @@ module apiManagement 'br/public:avm/res/api-management/service:0.14.4' = {
         protocols: [
           'https'
         ]
-        serviceUrl: 'https://${appServiceName}.azurewebsites.net'
+        serviceUrl: 'https://${containerAppName}.${managedEnvironment.outputs.defaultDomain}'
         subscriptionRequired: true
         type: 'http'
         format: 'openapi+json'
@@ -226,101 +242,84 @@ resource deployedApiManagement 'Microsoft.ApiManagement/service@2024-05-01' exis
   name: apiManagementName
 }
 
-module appService 'br/public:avm/res/web/site:0.24.0' = {
-  name: 'app-service'
+module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
+  name: 'container-app'
   params: {
-    name: appServiceName
+    name: containerAppName
     location: location
-    kind: 'app,linux'
-    serverFarmResourceId: appServicePlan.outputs.resourceId
-    httpsOnly: true
-    clientAffinityEnabled: false
-    publicNetworkAccess: 'Enabled'
+    environmentResourceId: managedEnvironment.outputs.resourceId
     managedIdentities: {
       systemAssigned: true
     }
-    basicPublishingCredentialsPolicies: [
+    registries: [
       {
-        name: 'ftp'
-        allow: false
-      }
-      {
-        name: 'scm'
-        allow: false
+        server: containerRegistry.outputs.loginServer
+        identity: 'system'
       }
     ]
-    siteConfig: {
-      alwaysOn: true
-      ftpsState: 'Disabled'
-      healthCheckPath: '/health/ready'
-      http20Enabled: true
-      linuxFxVersion: 'DOTNETCORE|10.0'
-      minTlsVersion: '1.2'
-      remoteDebuggingEnabled: false
-      ipSecurityRestrictionsDefaultAction: 'Deny'
-      ipSecurityRestrictions: [
-        {
-          name: 'Allow-APIM'
-          description: 'Allow only the exclusive public IP of this APIM instance.'
-          action: 'Allow'
-          ipAddress: '${deployedApiManagement.properties.publicIPAddresses[0]}/32'
-          priority: 100
-        }
-      ]
-      scmIpSecurityRestrictionsUseMain: false
-      scmIpSecurityRestrictionsDefaultAction: 'Allow'
-      appSettings: [
-        {
-          name: 'ASPNETCORE_ENVIRONMENT'
-          value: 'Production'
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: applicationInsights.outputs.connectionString
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_AUTHENTICATION_STRING'
-          value: 'Authorization=AAD'
-        }
-        {
-          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-          value: '~3'
-        }
-        {
-          name: 'XDT_MicrosoftApplicationInsights_Mode'
-          value: 'recommended'
-        }
-        {
-          name: 'XDT_MicrosoftApplicationInsights_PreemptSdk'
-          value: '1'
-        }
-        {
-          name: 'Cors__AllowedOrigins__0'
-          value: 'http://localhost:5265'
-        }
-        {
-          name: 'Cors__AllowedOrigins__1'
-          value: 'http://127.0.0.1:5265'
-        }
-        {
-          name: 'WEBSITE_HEALTHCHECK_MAXPINGFAILURES'
-          value: '3'
-        }
-      ]
-    }
-    diagnosticSettings: [
+    ingressExternal: true
+    ingressTargetPort: 8080
+    ingressAllowInsecure: false
+    ipSecurityRestrictions: [
       {
-        name: 'send-to-log-analytics'
-        workspaceResourceId: logAnalytics.outputs.resourceId
-        logAnalyticsDestinationType: 'Dedicated'
-        logCategoriesAndGroups: [
+        name: 'Allow-APIM'
+        description: 'Allow only the exclusive public IP of this API Management instance.'
+        action: 'Allow'
+        ipAddressRange: '${deployedApiManagement.properties.publicIPAddresses[0]}/32'
+      }
+    ]
+    activeRevisionsMode: 'Single'
+    scaleSettings: {
+      minReplicas: 0
+      maxReplicas: 10
+    }
+    containers: [
+      {
+        name: 'api'
+        image: apiImage
+        resources: {
+          cpu: json('0.5')
+          memory: '1Gi'
+        }
+        env: [
           {
-            categoryGroup: 'allLogs'
+            name: 'ASPNETCORE_ENVIRONMENT'
+            value: 'Production'
+          }
+          {
+            name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+            value: applicationInsights.outputs.connectionString
+          }
+          {
+            name: 'Cors__AllowedOrigins__0'
+            value: 'http://localhost:5265'
+          }
+          {
+            name: 'Cors__AllowedOrigins__1'
+            value: 'http://127.0.0.1:5265'
+          }
+          {
+            name: 'TestScenarios__Enabled'
+            value: string(enableTestScenarios)
+          }
+          {
+            name: 'TestScenarios__TimeoutDelayMilliseconds'
+            value: '1500'
+          }
+          {
+            name: 'TestScenarios__SlowDelayMilliseconds'
+            value: '2500'
           }
         ]
-        metricCategories: [
+        probes: [
           {
-            category: 'AllMetrics'
+            type: 'Readiness'
+            httpGet: {
+              path: '/health/ready'
+              port: 8080
+            }
+            initialDelaySeconds: 5
+            periodSeconds: 10
           }
         ]
       }
@@ -334,14 +333,25 @@ module appService 'br/public:avm/res/web/site:0.24.0' = {
   ]
 }
 
+module containerAppRegistryPull './acr-pull-role.bicep' = {
+  name: 'container-app-acr-pull'
+  params: {
+    name: containerAppName
+    location: location
+    tags: tags
+    containerRegistryName: containerRegistryName
+    principalId: containerApp.outputs.systemAssignedMIPrincipalId!
+  }
+}
+
 module appTelemetryPublisher './application-insights-publisher-role.bicep' = {
   name: 'app-telemetry-publisher'
   params: {
-    name: appServiceName
+    name: containerAppName
     location: location
     tags: tags
     applicationInsightsName: applicationInsightsName
-    principalId: appService.outputs.systemAssignedMIPrincipalId!
+    principalId: containerApp.outputs.systemAssignedMIPrincipalId!
   }
 }
 
@@ -356,91 +366,63 @@ module apiManagementTelemetryPublisher './application-insights-publisher-role.bi
   }
 }
 
-module appHealthAlert 'br/public:avm/res/insights/metric-alert:0.4.1' = {
-  name: 'alert-app-health'
+module containerRestartAlert 'br/public:avm/res/insights/metric-alert:0.4.1' = {
+  name: 'alert-container-restarts'
   params: {
-    name: 'alert-wf-app-health-${resourceSuffix}'
-    alertDescription: 'Waypoint Freight App Service health check is reporting an unhealthy instance.'
+    name: 'alert-wf-container-restarts-${resourceSuffix}'
+    alertDescription: 'Waypoint Freight Container App reported one or more container restarts.'
     criteria: {
       allof: [
         {
           criterionType: 'StaticThresholdCriterion'
           dimensions: []
-          metricName: 'HealthCheckStatus'
-          metricNamespace: 'Microsoft.Web/sites'
-          name: 'AppHealthCheckUnhealthy'
-          operator: 'LessThan'
-          threshold: 1
-          timeAggregation: 'Average'
-        }
-      ]
-      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
-    }
-    evaluationFrequency: 'PT5M'
-    scopes: [
-      appService.outputs.resourceId
-    ]
-    severity: 1
-    tags: tags
-    windowSize: 'PT15M'
-  }
-}
-
-module appServerErrorAlert 'br/public:avm/res/insights/metric-alert:0.4.1' = {
-  name: 'alert-app-server-errors'
-  params: {
-    name: 'alert-wf-app-5xx-${resourceSuffix}'
-    alertDescription: 'Waypoint Freight App Service returned one or more HTTP 5xx responses.'
-    criteria: {
-      allof: [
-        {
-          criterionType: 'StaticThresholdCriterion'
-          dimensions: []
-          metricName: 'Http5xx'
-          metricNamespace: 'Microsoft.Web/sites'
-          name: 'AppHttp5xx'
+          metricName: 'RestartCount'
+          metricNamespace: 'Microsoft.App/containerApps'
+          name: 'ContainerRestarts'
           operator: 'GreaterThan'
+          skipMetricValidation: true
           threshold: 0
           timeAggregation: 'Total'
         }
       ]
       'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
     }
-    evaluationFrequency: 'PT1M'
+    evaluationFrequency: 'PT5M'
     scopes: [
-      appService.outputs.resourceId
+      containerApp.outputs.resourceId
     ]
-    severity: 1
+    severity: 2
     tags: tags
-    windowSize: 'PT5M'
+    windowSize: 'PT15M'
   }
 }
 
-module appLatencyAlert 'br/public:avm/res/insights/metric-alert:0.4.1' = {
-  name: 'alert-app-latency'
+module backendServerErrorAlert 'br/public:avm/res/insights/scheduled-query-rule:0.6.0' = {
+  name: 'alert-backend-server-errors'
   params: {
-    name: 'alert-wf-app-latency-${resourceSuffix}'
-    alertDescription: 'Waypoint Freight App Service average response time exceeded two seconds.'
-    criteria: {
-      allof: [
+    name: 'alert-wf-backend-5xx-${resourceSuffix}'
+    alertDisplayName: 'Waypoint Freight backend returned server errors'
+    alertDescription: 'The Waypoint Freight backend application recorded one or more HTTP 5xx responses.'
+    autoMitigate: true
+    criterias: {
+      allOf: [
         {
-          criterionType: 'StaticThresholdCriterion'
           dimensions: []
-          metricName: 'HttpResponseTime'
-          metricNamespace: 'Microsoft.Web/sites'
-          name: 'AppResponseTime'
+          metricMeasureColumn: 'ServerErrors'
           operator: 'GreaterThan'
-          threshold: 2
-          timeAggregation: 'Average'
+          query: backendServerErrorQuery
+          threshold: 0
+          timeAggregation: 'Total'
         }
       ]
-      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
     }
-    evaluationFrequency: 'PT1M'
+    evaluationFrequency: 'PT5M'
+    queryTimeRange: 'PT5M'
     scopes: [
-      appService.outputs.resourceId
+      logAnalytics.outputs.resourceId
     ]
-    severity: 2
+    severity: 1
+    skipQueryValidation: true
     tags: tags
     windowSize: 'PT5M'
   }
@@ -519,7 +501,7 @@ module telemetryAbsenceAlert 'br/public:avm/res/insights/scheduled-query-rule:0.
   params: {
     name: 'alert-wf-telemetry-absence-${resourceSuffix}'
     alertDisplayName: 'Waypoint Freight telemetry ingestion absent'
-    alertDescription: 'No App Service application telemetry reached the workspace during the last 15 minutes.'
+    alertDescription: 'No Waypoint Freight application telemetry reached the workspace during the last 15 minutes.'
     autoMitigate: true
     criterias: {
       allOf: [
@@ -579,8 +561,9 @@ module resourceHealthAlert 'br/public:avm/res/insights/activity-log-alert:0.4.2'
   }
 }
 
-output appServiceName string = appService.outputs.name
-output appServiceUrl string = 'https://${appService.outputs.defaultHostname}'
+output containerAppName string = containerApp.outputs.name
+output containerAppUrl string = 'https://${containerApp.outputs.fqdn}'
+output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
 output apiManagementName string = apiManagement.outputs.name
 output gatewayApiUrl string = 'https://${apiManagement.outputs.name}.azure-api.net/waypoint'
 output applicationInsightsName string = applicationInsights.outputs.name
@@ -588,16 +571,17 @@ output logAnalyticsResourceId string = logAnalytics.outputs.resourceId
 output expectedResourceIds array = [
   logAnalytics.outputs.resourceId
   applicationInsights.outputs.resourceId
-  appServicePlan.outputs.resourceId
+  containerRegistry.outputs.resourceId
+  managedEnvironment.outputs.resourceId
   apiManagement.outputs.resourceId
-  appService.outputs.resourceId
-  appHealthAlert.outputs.resourceId
-  appServerErrorAlert.outputs.resourceId
-  appLatencyAlert.outputs.resourceId
+  containerApp.outputs.resourceId
+  containerRestartAlert.outputs.resourceId
+  backendServerErrorAlert.outputs.resourceId
   apiManagementServerErrorAlert.outputs.resourceId
   apiManagementLatencyAlert.outputs.resourceId
   telemetryAbsenceAlert.outputs.resourceId
   resourceHealthAlert.outputs.resourceId
+  containerAppRegistryPull.outputs.resourceId
   appTelemetryPublisher.outputs.resourceId
   apiManagementTelemetryPublisher.outputs.resourceId
 ]

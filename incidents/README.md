@@ -6,4 +6,4 @@ Use the [incident record template](../.github/skills/azureiq-incident-response/r
 
 Do not commit credentials, tokens, personal data, authorization headers, cookies, customer payloads, unrestricted logs, debug traces, connection strings, private keys, or secret values. Reference authorized evidence by incident-safe ID, query, UTC window, hash, and controlled location.
 
-Only verified causes and outcomes may update service packs or future automation. A plausible hypothesis is not durable learning.
+Only verified causes and outcomes may update support domains or future automation. A plausible hypothesis is not durable learning.

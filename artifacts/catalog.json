@@ -112,19 +112,19 @@
     },
     {
       "id": "apim.request-evidence",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "kind": "kql-query",
       "executionMode": "read-only",
-      "status": "draft",
-      "valueProof": "unproven",
-      "description": "Retrieve payload-minimized API Management gateway evidence by resource, UTC window, correlation, API, and operation.",
+      "status": "validated",
+      "valueProof": "value-demonstrated",
+      "description": "Retrieve payload-minimized API Management gateway evidence by resource, UTC window, correlation, API, and operation, projecting request path and the ResponseCode versus BackendResponseCode localization fields.",
       "intents": [
         "retrieve APIM gateway request evidence",
         "diagnose an unexpected APIM response"
       ],
       "source": {
-        "path": "../service-packs/api-management/queries/request-evidence.kql",
-        "sha256": "5b3cae16fb18b4e59d9e78552b5eaa47fe6ee3f6126911b21a22b2431dbad475",
+        "path": "../support-domains/api-management/queries/request-evidence.kql",
+        "sha256": "cd2e6567ed3076c17b7d71152165e8eb9354bbbdc242506c5927b74e13b8254a",
         "entryPoint": null
       },
       "compatibility": {
@@ -140,7 +140,8 @@
         "conditions": [
           "resource-specific ApiManagementGatewayLogs data exists",
           "caller has Log Analytics query permission",
-          "query window is within retained data"
+          "query window is within retained data",
+          "the queried workspace is the diagnostic-setting destination for the target APIM service"
         ]
       },
       "parameters": [
@@ -167,16 +168,18 @@
         }
       ],
       "validation": {
-        "level": "static",
-        "lastValidatedAt": "2026-07-19",
-        "expiresAt": "2026-10-19",
+        "level": "live-read",
+        "lastValidatedAt": "2026-07-24",
+        "expiresAt": "2026-10-24",
         "methods": [
           "official Azure Monitor table schema review",
           "official sample-query comparison",
-          "editor diagnostics"
+          "editor diagnostics",
+          "live read-only execution against a Developer-tier APIM service"
         ],
         "evidenceRefs": [
-          "https://learn.microsoft.com/azure/azure-monitor/reference/tables/apimanagementgatewaylogs"
+          "https://learn.microsoft.com/azure/azure-monitor/reference/tables/apimanagementgatewaylogs",
+          "support-domain:api-management@0.2.0"
         ]
       },
       "reuse": {
@@ -190,26 +193,207 @@
         "updatePolicy": "Validate against live scoped data before promotion; create a new version when projected fields or semantics change."
       },
       "owners": [
-        "AzureIQ APIM service pack"
+        "AzureIQ APIM support domain"
+      ],
+      "supersedes": [
+        "apim.request-evidence@0.1.0"
+      ],
+      "supersededBy": null
+    },
+    {
+      "id": "azure-monitor.distributed-trace-correlation",
+      "version": "0.1.0",
+      "kind": "kql-query",
+      "executionMode": "read-only",
+      "status": "validated",
+      "valueProof": "value-demonstrated",
+      "description": "Correlate request, dependency, and exception spans across instrumented services by Application Insights OperationId.",
+      "intents": [
+        "correlate telemetry across instrumented Azure services for one request",
+        "determine which instrumented service or dependency generated a failure"
+      ],
+      "source": {
+        "path": "../support-domains/azure-monitor/queries/distributed-trace-correlation.kql",
+        "sha256": "93bd2ddd73d19af873554a7a672333feea77353137fec58b34ecd16ab8759b51",
+        "entryPoint": null
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Insights/components"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "any"
+        ],
+        "conditions": [
+          "participating services send telemetry to a queryable workspace-based Application Insights resource",
+          "distributed tracing is enabled so participating hops share OperationId",
+          "caller has Log Analytics query permission"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "lookback",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "target operation IDs, name filter, and role filter",
+          "required": false,
+          "sensitive": true,
+          "source": "derived"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "correlation-key-selection",
+          "condition": "Gateway CorrelationId, Application Insights OperationId, and a client-supplied correlation header are all present and do not match.",
+          "question": "Which identifier space actually links the hops in this deployment, and which table populates it?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "exception-message-retention",
+          "condition": "Exception detail may contain sensitive application text.",
+          "question": "Has the exception message been reviewed and redacted before evidence is retained?",
+          "severity": "advisory",
+          "canInfer": true
+        }
+      ],
+      "validation": {
+        "level": "live-read",
+        "lastValidatedAt": "2026-07-24",
+        "expiresAt": "2026-10-24",
+        "methods": [
+          "live read-only execution against APIM and a Container Apps backend",
+          "cross-check against ApiManagementGatewayLogs for the same requests",
+          "official Application Insights table schema review"
+        ],
+        "evidenceRefs": [
+          "support-domain:azure-monitor@0.1.0",
+          "support-domain:api-management@0.2.0",
+          "capability:apim.unexpected-response.diagnose"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "correlation protocol or telemetry SDK changes",
+          "Application Insights table plan or schema changes",
+          "participating service instrumentation changes",
+          "validation expires"
+        ],
+        "updatePolicy": "Create a new version when projected columns, union members, or join semantics change."
+      },
+      "owners": [
+        "AzureIQ Azure Monitor support domain"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "container-apps.platform-evidence",
+      "version": "0.1.0",
+      "kind": "kql-query",
+      "executionMode": "read-only",
+      "status": "validated",
+      "valueProof": "value-demonstrated",
+      "description": "Retrieve Container Apps managed-environment system events to identify cold starts, scaling, scheduling, image-pull, and restart behavior.",
+      "intents": [
+        "explain Container Apps latency, startup, scaling, or restarts",
+        "distinguish a Container Apps cold start from a backend failure"
+      ],
+      "source": {
+        "path": "../support-domains/container-apps/queries/platform-evidence.kql",
+        "sha256": "459db8c0307cc3aa2fd92e1a1b6d547a968dca939dd6e9f58599c3ebfcd7aa78",
+        "entryPoint": null
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.App/containerApps",
+          "Microsoft.App/managedEnvironments"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "any"
+        ],
+        "conditions": [
+          "the Container Apps environment sends system logs to a Log Analytics workspace",
+          "the queried workspace is the managed-environment destination, which may differ from the APIM workspace",
+          "caller has Log Analytics query permission"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "lookback",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "target container app name",
+          "required": false,
+          "sensitive": true,
+          "source": "derived"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "managed-environment-workspace",
+          "condition": "The Container Apps system log table is absent from the selected workspace.",
+          "question": "Which Log Analytics workspace is configured on the managed environment?",
+          "severity": "blocker",
+          "canInfer": true
+        }
+      ],
+      "validation": {
+        "level": "live-read",
+        "lastValidatedAt": "2026-07-24",
+        "expiresAt": "2026-10-24",
+        "methods": [
+          "live read-only execution against the managed-environment workspace",
+          "cross-check of scale and start events against Application Insights request duration"
+        ],
+        "evidenceRefs": [
+          "support-domain:container-apps@0.1.0",
+          "support-domain:api-management@0.2.0"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Container Apps system log schema changes",
+          "environment logging destination changes",
+          "validation expires"
+        ],
+        "updatePolicy": "Create a new version when Container Apps system-log schema, projected fields, or interpretation changes."
+      },
+      "owners": [
+        "AzureIQ Container Apps support domain"
       ],
       "supersedes": [],
       "supersededBy": null
     },
     {
       "id": "apim.unexpected-response",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "kind": "runbook",
       "executionMode": "workflow",
-      "status": "draft",
-      "valueProof": "unproven",
-      "description": "Localize unexpected APIM responses across upstream proxy, inbound policy, backend, outbound policy, on-error policy, cache, and downstream behavior.",
+      "status": "validated",
+      "valueProof": "value-demonstrated",
+      "description": "Localize unexpected APIM responses across upstream proxy, inbound policy, backend, outbound policy, on-error policy, cache, and downstream behavior, starting from supported platform detectors and reporting problem definition, diagnosis, and root cause analysis.",
       "intents": [
         "diagnose an unexpected APIM response",
         "plan a bounded APIM response remediation"
       ],
       "source": {
-        "path": "../service-packs/api-management/runbooks/unexpected-response.md",
-        "sha256": "70258fc6a8a031c623095da646855ce95cc3643e873ff157a4b221dea98b3187",
+        "path": "../support-domains/api-management/runbooks/unexpected-response.md",
+        "sha256": "de18cbcf485024b4c900660df3dcb83533383925bfd9a458b59a23a05299e9b4",
         "entryPoint": null
       },
       "compatibility": {
@@ -256,18 +440,28 @@
           "question": "Do you approve a minimized API-specific trace with time-limited credentials and controlled evidence retention?",
           "severity": "approval",
           "canInfer": false
+        },
+        {
+          "id": "intended-behavior",
+          "condition": "The observed status matches an application contract, policy decision, or fault-injection endpoint.",
+          "question": "Is this response intended behavior rather than a defect, and should the incident be closed as expected?",
+          "severity": "advisory",
+          "canInfer": true
         }
       ],
       "validation": {
-        "level": "static",
-        "lastValidatedAt": "2026-07-19",
-        "expiresAt": "2026-10-19",
+        "level": "live-read",
+        "lastValidatedAt": "2026-07-24",
+        "expiresAt": "2026-10-24",
         "methods": [
           "current Microsoft APIM monitoring and tracing documentation review",
-          "local link and editor validation"
+          "local link and editor validation",
+          "live read-only diagnosis of successful and failed requests through a Developer-tier gateway",
+          "detector-baseline comparison against AppLens and Resource Health"
         ],
         "evidenceRefs": [
-          "service-pack:api-management@0.1.0"
+          "support-domain:api-management@0.2.0",
+          "capability:apim.unexpected-response.diagnose"
         ]
       },
       "reuse": {
@@ -280,33 +474,33 @@
         "updatePolicy": "Preserve the validated decision tree; create a new version for changed tracing, policy, or verification semantics."
       },
       "owners": [
-        "AzureIQ APIM service pack"
+        "AzureIQ APIM support domain"
       ],
-      "supersedes": [],
+      "supersedes": [
+        "apim.unexpected-response@0.1.0"
+      ],
       "supersededBy": null
     },
     {
       "id": "waypoint-freight.disposable-baseline",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "kind": "bicep-module",
       "executionMode": "declarative",
       "status": "candidate",
       "valueProof": "unproven",
-      "description": "Deploy the disposable Waypoint Freight Container Apps and API Management baseline with managed-identity telemetry, Activity Log export, alerts, exact inventory, and supervised teardown metadata.",
+      "description": "Deploy the disposable Waypoint Freight Container Apps and API Management baseline declaratively, with a single workspace, managed-identity registry access and telemetry, Activity Log export, alerts, exact inventory, and supervised teardown metadata.",
       "intents": [
         "deploy the Waypoint Freight Azure case-study baseline",
         "create a disposable observable App Service and API Management environment"
       ],
       "source": {
         "path": "../infra/artifact-manifest.json",
-        "sha256": "724ef39a22ce59d458c0551dd97229eaf087ba9fe7271266887a15a20191dd0e",
+        "sha256": "4c57adff1eb46a38ddd9970533d81ab1a388caa7c08031cc998f5552a5eefc2d",
         "entryPoint": "infra/main.bicep"
       },
       "compatibility": {
         "resourceTypes": [
           "Microsoft.Resources/subscriptions/resourceGroups",
-          "Microsoft.Web/serverfarms",
-          "Microsoft.Web/sites",
           "Microsoft.App/managedEnvironments",
           "Microsoft.App/containerApps",
           "Microsoft.ContainerRegistry/registries",
@@ -329,6 +523,7 @@
           "effective private scope contains exactly one supervised test subscription",
           "eastus2 supports Container Apps Consumption, ACR Basic, and APIM Developer",
           "the target Resource Group contains no unrelated resources or locks",
+          "no soft-deleted API Management service still holds the derived name",
           "the local client can supply an APIM product subscription key at runtime",
           "the optional VNet and private-endpoint phase is not combined with this baseline"
         ]
@@ -378,14 +573,13 @@
       ],
       "validation": {
         "level": "static",
-        "lastValidatedAt": "2026-07-23",
-        "expiresAt": "2026-08-23",
+        "lastValidatedAt": "2026-07-24",
+        "expiresAt": "2026-08-24",
         "methods": [
           "Bicep lint and compilation with pinned Azure Verified Modules",
-          "API and client Release builds plus eight integration tests",
+          "API and client Release builds plus fifteen integration tests",
           "OpenAPI 3.0, APIM policy XML, JSON Schema, and privacy validation",
-          "exact AZD application package digest and archive inventory",
-          "live read-only inventory, provider, policy, quota, lock, role, deny, and APIM soft-delete preflight"
+          "expected-inventory alignment with the declared Container Apps topology"
         ],
         "evidenceRefs": [
           ".azure/deployment-plan.md#7-validation-proof",
@@ -519,6 +713,130 @@
       "supersedes": [
         "waypoint-freight.disposable-baseline@0.2.0"
       ],
+      "supersededBy": null
+    },
+    {
+      "id": "ai-foundry.gateway-baseline",
+      "version": "0.1.0",
+      "kind": "bicep-module",
+      "executionMode": "declarative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Deploy a reusable AI Foundry account with model deployments behind an API Management AI gateway that authenticates to the models with a managed identity and enforces rate, quota, and token limits.",
+      "intents": [
+        "publish an AI Foundry resource with model deployments",
+        "protect large language models behind API Management",
+        "authenticate to Azure AI models with a managed identity"
+      ],
+      "source": {
+        "path": "../infra/ai-foundry/artifact-manifest.json",
+        "sha256": "df7d4219550429db3d015ffac2656934ea0a6c9bea194a86fdf88d056c27f7cf",
+        "entryPoint": "infra/ai-foundry/main.bicep"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Resources/subscriptions/resourceGroups",
+          "Microsoft.CognitiveServices/accounts",
+          "Microsoft.CognitiveServices/accounts/deployments",
+          "Microsoft.CognitiveServices/accounts/projects",
+          "Microsoft.ApiManagement/service",
+          "Microsoft.OperationalInsights/workspaces",
+          "Microsoft.Insights/components",
+          "Microsoft.Insights/metricAlerts",
+          "Microsoft.Authorization/roleAssignments"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production",
+          "production-with-approved-manifest"
+        ],
+        "conditions": [
+          "the target region offers the requested models and deployment SKUs",
+          "subscription quota covers the requested model capacity",
+          "the target Resource Group is dedicated to this instance",
+          "no soft-deleted API Management or Cognitive Services account holds the derived name",
+          "callers reach the models only through the gateway product subscription"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "environment name, region, resource group, and API Management SKU",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "model deployments with version, SKU, and capacity",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "publisher email and tenant scope",
+          "required": true,
+          "sensitive": true,
+          "source": "private-config"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "model-capacity",
+          "condition": "Requested model capacity approaches or exceeds remaining regional quota.",
+          "question": "Which capacity per deployment is approved, and should a different region be used?",
+          "severity": "approval",
+          "canInfer": true
+        },
+        {
+          "id": "gateway-sku-cost",
+          "condition": "API Management SKU selection changes cost, SLA, and scaling behavior.",
+          "question": "Is the Developer SKU acceptable given it carries no SLA and is not production grade?",
+          "severity": "approval",
+          "canInfer": false
+        },
+        {
+          "id": "end-user-authentication",
+          "condition": "A browser client holds a gateway subscription key, which identifies a consumer rather than an end user.",
+          "question": "Should Entra ID token validation be added before any non-test use?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "live-write",
+        "lastValidatedAt": "2026-07-27",
+        "expiresAt": "2026-08-27",
+        "methods": [
+          "Bicep build and lint with pinned Azure Verified Modules",
+          "ARM subscription-scope validation and create-only what-if",
+          "live model catalog, SKU, and quota confirmation in the target region",
+          "live deployment with exact expected-inventory reconciliation and ownership tag check",
+          "live chat completion through the gateway on both model deployments",
+          "anonymous gateway request rejection and least-privilege role scope check"
+        ],
+        "evidenceRefs": [
+          "infra/ai-foundry/artifact-manifest.json",
+          "infra/ai-foundry/expected-inventory.json",
+          "live:ai-gateway-chat-completion",
+          "live:ai-gateway-anonymous-rejected"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "model names, versions, SKUs, or capacity change",
+          "an Azure Verified Module or data plane API version changes",
+          "target region, subscription, or resource group changes",
+          "gateway policy, authentication, or limits change",
+          "validation expires"
+        ],
+        "updatePolicy": "Keep candidate until one full create, verify, teardown, and recreate cycle succeeds; create a new semantic version for material topology or policy changes."
+      },
+      "owners": [
+        "AzureIQ platform"
+      ],
+      "supersedes": [],
       "supersededBy": null
     }
   ]

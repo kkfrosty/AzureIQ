@@ -20,7 +20,7 @@ The model can help reason about evidence and choose a known runbook. It must not
 ```mermaid
 flowchart TB
     Operator[Operator in VS Code] --> Interactive[AzureIQ interactive orchestrator]
-    Repo[Git: desired state, policy, service packs, runbooks] --> Interactive
+    Repo[Git: desired state, policy, support domains, runbooks] --> Interactive
     Interactive --> Existing[Azure MCP, Azure extensions, built-in skills]
     Interactive --> Fallback[CLI, ARM REST, or browser fallback]
     Existing --> AzureAPI[Azure control and data plane APIs]
@@ -111,9 +111,9 @@ Every executable change should have a machine-readable manifest containing:
 
 Initial policy is deny-by-default for all writes. A remediation becomes eligible for automatic execution only after repeated supervised success, tests against representative failure modes, bounded scope, idempotency, and an explicit policy decision.
 
-## Service Packs
+## Support Domains
 
-AzureIQ scales by adding a service pack rather than teaching one general agent every service detail. A pack should define:
+AzureIQ scales by adding a support domain rather than teaching one general agent every service detail. A domain should define:
 
 - supported Azure resource types and API surfaces;
 - discovery and dependency queries;
@@ -140,7 +140,7 @@ Azure MCP and installed Azure skills are the baseline, not components AzureIQ sh
 5. Compare scope accuracy, factual and schema correctness, evidence completeness, unsupported claims, secret exposure, safety behavior, repeatability, prompts/tool calls, elapsed effort, and verification quality.
 6. Keep the artifact only when the result is materially better. Otherwise revise or retire it.
 
-Safety controls may intentionally add steps; they pass when the added friction reduces a defined risk. An unrun comparison remains `unproven`, even when the artifact is grounded in Microsoft documentation. New service packs should not be added until the API Management vertical slice demonstrates measurable value.
+Safety controls may intentionally add steps; they pass when the added friction reduces a defined risk. An unrun comparison remains `unproven`, even when the artifact is grounded in Microsoft documentation. New support domains should not be added until the API Management vertical slice demonstrates measurable value.
 
 ## Evidence Hierarchy
 

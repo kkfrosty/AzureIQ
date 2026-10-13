@@ -1,17 +1,33 @@
-# Azure API Management Service Pack
+# Azure API Management Support Domain
 
-**Status:** `draft`  
-**Value proof:** `unproven`  
-**Documentation reviewed:** 2026-07-19  
-**Cloud resources validated:** none
+**Status:** `observed`
 
-This pack is the first AzureIQ vertical slice. It is not yet authority to create or modify an API Management instance, and it has not yet demonstrated an advantage over Azure MCP alone.
+**Value proof:** `value-demonstrated`
+
+**Documentation reviewed:** 2026-07-24
+
+**Cloud resources validated:** one Developer-tier APIM service with a Container Apps backend, read-only
+
+This pack is the first AzureIQ vertical slice. It is not yet authority to create or modify an API Management instance. Its unexpected-response path has now been exercised read-only against a live service.
 
 ## Value Hypotheses
 
-The [manifest](manifest.yaml) records two hypotheses: schema-verified gateway evidence may correct generic log-query mistakes, and bounded planning plus independent verification may make APIM policy remediation safer. Neither gap has been observed in a controlled comparison yet.
+The [manifest](manifest.yaml) records two hypotheses: schema-verified gateway evidence may correct generic log-query mistakes, and bounded planning plus independent verification may make APIM policy remediation safer.
 
-Before adding more APIM guidance, run the same unexpected-response and policy-remediation scenarios first with Azure MCP and installed Azure skills alone, then with this pack under equivalent scope, permissions, telemetry, and starting context. Keep only artifacts that materially improve the declared acceptance criteria. Mark an equivalent result `no-value` and retire the redundant artifact.
+The first hypothesis is now `value-demonstrated`. In the live comparison the registered platform baseline produced nothing usable: AppLens failed twice for the APIM resource and does not support Container Apps backends, and a natural-language Resource Graph request was mistranslated into an unrelated query that returned zero rows. The gateway `ResponseCode` versus `BackendResponseCode` comparison localized both failures on the first scoped query. Azure MCP monitoring alone can reach the same result, but only after selecting the correct workspace, tables, and join key, which this pack now records.
+
+The second hypothesis remains `unproven` because no remediation has been planned or executed.
+
+## Diagnosis Order
+
+1. Attempt AppLens for supported resource types and record the outcome, including failures.
+2. Retrieve gateway evidence with [request-evidence.kql](queries/request-evidence.kql) using absolute UTC bounds.
+3. Localize with `BackendResponseCode`: empty means APIM answered before the backend, populated and equal means APIM relayed the backend outcome.
+4. Correlate instrumented hops with Azure Monitor [distributed-trace-correlation.kql](../azure-monitor/queries/distributed-trace-correlation.kql) by Application Insights `OperationId`.
+5. Explain backend latency or restarts with the backend support domain's evidence, such as Container Apps [platform-evidence.kql](../container-apps/queries/platform-evidence.kql).
+6. Separate deliberate application behavior, including synthetic and fault-injection endpoints, from infrastructure faults before declaring an incident.
+
+Before adding more APIM guidance, run the same scenarios first with Azure MCP and installed Azure skills alone, then with this pack under equivalent scope, permissions, telemetry, and starting context. Keep only artifacts that materially improve the declared acceptance criteria. Mark an equivalent result `no-value` and retire the redundant artifact.
 
 ## Intended Coverage
 
@@ -29,6 +45,8 @@ Every capability is SKU, gateway, workspace, API-version, network, and region de
 ## Current Tool Boundary
 
 The current VS Code environment has the official API Management extension, REST Client, XML support, Azure MCP diagnostics, monitoring, documentation, Resource Graph, Activity Log, and related Azure surfaces. No dedicated generic API Management MCP management router was observed, and the local Azure CLI is absent.
+
+AppLens is the registered first-choice detector surface, but its coverage is narrow and unreliable here. Verified on 2026-07-24: it exposes a single conversational diagnose command rather than an enumerable detector list; it supports only `microsoft.web/sites`, `microsoft.containerservice/managedclusters`, and `microsoft.apimanagement/service`; it failed twice for the validated Developer-tier APIM service with `BadRequest`; and Container Apps backends support neither AppLens nor Resource Health, which returned `422`. Attempt the detector first, record the outcome, and continue to telemetry without waiting for it.
 
 Until that changes:
 
@@ -52,6 +70,8 @@ The VS Code policy step debugger is limited by current Microsoft guidance to the
 - Use tail-latency and error/success-rate signals per important method rather than relying only on averages or raw failure counts.
 
 API Management logging is asynchronous except for request tracing. Azure Monitor log records have size limits and can drop body/trace content when entries are too large. Missing body content is therefore not proof that no transformation occurred.
+
+Gateway logs, Application Insights, and backend platform logs are often split across more than one workspace. Resolve the workspace that owns each table before concluding that a request is missing, and never read an empty result as proof that traffic or a change did not occur.
 
 ## Request Tracing Boundary
 

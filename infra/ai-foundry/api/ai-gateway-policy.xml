@@ -1,0 +1,61 @@
+<policies>
+  <inbound>
+    <base />
+    <cors allow-credentials="false" terminate-unmatched-request="true">
+      <allowed-origins>
+        <origin>http://localhost:5265</origin>
+        <origin>http://127.0.0.1:5265</origin>
+      </allowed-origins>
+      <allowed-methods preflight-result-max-age="300">
+        <method>POST</method>
+        <method>OPTIONS</method>
+      </allowed-methods>
+      <allowed-headers>
+        <header>content-type</header>
+        <header>ocp-apim-subscription-key</header>
+        <header>x-correlation-id</header>
+      </allowed-headers>
+      <expose-headers>
+        <header>x-correlation-id</header>
+        <header>x-tokens-consumed</header>
+        <header>x-tokens-remaining</header>
+      </expose-headers>
+    </cors>
+    <set-variable name="correlationId" value="@(context.Request.Headers.GetValueOrDefault(&quot;x-correlation-id&quot;, Guid.NewGuid().ToString(&quot;D&quot;)))" />
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@((string)context.Variables["correlationId"])</value>
+    </set-header>
+    <rate-limit-by-key calls="30" renewal-period="60" counter-key="@(context.Subscription?.Id ?? context.Request.IpAddress)" />
+    <quota-by-key calls="500" renewal-period="86400" counter-key="@(context.Subscription?.Id ?? context.Request.IpAddress)" />
+    <azure-openai-token-limit tokens-per-minute="10000" counter-key="@(context.Subscription?.Id ?? context.Request.IpAddress)" estimate-prompt-tokens="false" tokens-consumed-header-name="x-tokens-consumed" remaining-tokens-header-name="x-tokens-remaining" />
+    <azure-openai-emit-token-metric namespace="ai-gateway">
+      <dimension name="Deployment" value="@(context.Request.MatchedParameters.GetValueOrDefault(&quot;deployment-id&quot;, &quot;unknown&quot;))" />
+      <dimension name="ApiName" value="@(context.Api.Name)" />
+    </azure-openai-emit-token-metric>
+    <authentication-managed-identity resource="https://cognitiveservices.azure.com" output-token-variable-name="managed-id-access-token" ignore-error="false" />
+    <set-header name="Authorization" exists-action="override">
+      <value>@("Bearer " + (string)context.Variables["managed-id-access-token"])</value>
+    </set-header>
+  </inbound>
+  <backend>
+    <forward-request timeout="120" />
+  </backend>
+  <outbound>
+    <base />
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@((string)context.Variables["correlationId"])</value>
+    </set-header>
+  </outbound>
+  <on-error>
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@((string)context.Variables.GetValueOrDefault("correlationId", context.RequestId.ToString()))</value>
+    </set-header>
+    <return-response>
+      <set-status code="@(context.Response.StatusCode &gt;= 400 ? context.Response.StatusCode : 502)" reason="@(context.Response.StatusCode &gt;= 400 ? context.Response.StatusReason : &quot;Bad Gateway&quot;)" />
+      <set-header name="content-type" exists-action="override">
+        <value>application/json</value>
+      </set-header>
+      <set-body>@("{\"code\":\"ai_gateway_error\",\"message\":\"The AI gateway could not complete the request.\",\"correlationId\":\"" + context.Variables.GetValueOrDefault("correlationId", context.RequestId.ToString()) + "\"}")</set-body>
+    </return-response>
+  </on-error>
+</policies>

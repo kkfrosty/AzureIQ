@@ -10,7 +10,7 @@ AzureIQ needs durable knowledge, but "agent memory" must not become a shadow sou
 | Metrics, logs, traces, changes, and health history | Azure Monitor, Log Analytics, Application Insights, Activity Log, Resource/Service Health, and approved archives | Store query definitions and evidence references, not unrestricted raw output |
 | Desired infrastructure and service configuration | Reviewed infrastructure as code and versioned configuration | Primary durable source |
 | Reusable generated assets | `artifacts/catalog.json`, versioned source, private Bicep registry/template specs when promoted | Select by intent and compatibility instead of regenerating |
-| Operational procedures and service semantics | Versioned service packs and Microsoft documentation | Store tested baselines, decision trees, runbooks, limits, and review dates |
+| Operational procedures and service semantics | Versioned support domains and Microsoft documentation | Store tested baselines, decision trees, runbooks, limits, and review dates |
 | Incident facts and learning | Incident system plus authorized evidence stores | Store sanitized records and only verified durable lessons |
 | In-flight hosted workflow state | Durable orchestration and incident state store | Store schemas and retention policy, not transient state |
 | Execution history | Local ignored run ledger during development; durable access-controlled audit store when hosted | Record artifact/tool digest, authorization, result, verification, and learning without customer identifiers |
@@ -21,7 +21,7 @@ AzureIQ needs durable knowledge, but "agent memory" must not become a shadow sou
 - architecture decisions and operating policy;
 - non-secret scope configuration;
 - infrastructure as code and deployment parameters without secrets;
-- service-pack manifests, baselines, KQL, alerts, dashboards, tests, and runbooks;
+- support-domain manifests, baselines, KQL, alerts, dashboards, tests, and runbooks;
 - reusable artifact metadata, compatibility, source digests, decision points, validation freshness, and supersession;
 - action and incident schemas;
 - sanitized incident records and post-incident improvements;
@@ -54,7 +54,7 @@ An incident hypothesis is not learned merely because a remediation coincided wit
 
 ## Retrieval Order
 
-1. Read the workspace operating contract and relevant service pack.
+1. Read the workspace operating contract and relevant support domain.
 2. Query authenticated Azure scope and current state.
 3. Query telemetry for the explicit UTC window.
 4. Use incident history as a source of candidate hypotheses, not proof.

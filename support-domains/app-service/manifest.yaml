@@ -1,0 +1,28 @@
+schemaVersion: 1
+
+supportDomain:
+  name: app-service
+  displayName: Azure App Service
+  version: 0.1.0
+  status: draft
+  owners: []
+  reviewedAt: 2026-07-24
+  reviewExpiresAt: 2026-10-24
+
+value:
+  proofStatus: unproven
+  baselineProvider: Azure MCP, AppLens, and installed Azure diagnostic skills
+  baselineStatus: not-run
+  comparisonResultReference: null
+  retentionDecision: pending
+
+azure:
+  resourceTypes:
+    - Microsoft.Web/sites
+    - Microsoft.Web/serverfarms
+
+collaborations:
+  - pack: azure-monitor
+    purpose: Request, dependency, exception, and trace correlation.
+  - pack: networking
+    purpose: Access restrictions, private endpoints, DNS, and upstream routing.

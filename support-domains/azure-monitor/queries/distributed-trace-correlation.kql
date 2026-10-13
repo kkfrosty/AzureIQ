@@ -1,0 +1,37 @@
+// Correlate service request, dependency, and exception spans using W3C distributed trace IDs.
+// Payload-minimized: no request/response bodies, headers, keys, client IPs, or stack traces.
+//
+// Identifier spaces are not interchangeable:
+//   App* tables OperationId : W3C distributed trace identifier shared across instrumented hops
+//   service-specific request IDs : identifiers owned by gateways or hosting platforms
+//   client correlation header : application-defined and not necessarily a W3C trace identifier
+let Lookback = 1h;
+let TargetOperationIds = dynamic([]);
+let TargetNameContains = "";
+let TargetAppRoleName = "";
+let Spans =
+    union isfuzzy=true
+        (
+            AppRequests
+            | project TimeGenerated, OperationId, ParentId, SpanId = Id, Telemetry = "request",
+                AppRoleName, AppRoleInstance, Name, Target = "", Outcome = tostring(Success),
+                ResultCode, DurationMs, Detail = ""
+        ),
+        (
+            AppDependencies
+            | project TimeGenerated, OperationId, ParentId, SpanId = Id, Telemetry = "dependency",
+                AppRoleName, AppRoleInstance, Name, Target, Outcome = tostring(Success),
+                ResultCode, DurationMs, Detail = DependencyType
+        ),
+        (
+            AppExceptions
+            | project TimeGenerated, OperationId, ParentId, SpanId = "", Telemetry = "exception",
+                AppRoleName, AppRoleInstance, Name = ProblemId, Target = "", Outcome = "False",
+                ResultCode = "", DurationMs = real(null), Detail = OuterMessage
+        );
+Spans
+| where TimeGenerated >= ago(Lookback)
+| where array_length(TargetOperationIds) == 0 or OperationId in (TargetOperationIds)
+| where isempty(TargetNameContains) or Name has TargetNameContains
+| where isempty(TargetAppRoleName) or AppRoleName =~ TargetAppRoleName
+| order by OperationId asc, TimeGenerated asc, Telemetry asc

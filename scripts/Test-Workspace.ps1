@@ -5,7 +5,6 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
-$gitMetadataRoot = (Join-Path $workspaceRoot '.git') + [System.IO.Path]::DirectorySeparatorChar
 $excludedDirectoryNames = @(
     '.git',
     '.azureiq',
@@ -47,7 +46,11 @@ $requiredPaths = @(
     'src/AzureIQ.Execution/operations.json',
     'src/AzureIQ.Execution/Program.cs',
     'src/AzureIQ.Execution/README.md',
-    'service-packs/api-management/manifest.yaml'
+    'support-domains/api-management/manifest.yaml',
+    'support-domains/app-service/manifest.yaml',
+    'support-domains/azure-monitor/manifest.yaml',
+    'support-domains/container-apps/manifest.yaml',
+    'support-domains/networking/manifest.yaml'
 )
 
 foreach ($requiredPath in $requiredPaths) {
@@ -226,9 +229,9 @@ foreach ($skillFile in $skillFiles) {
     }
 }
 
-$servicePackManifests = @(Get-ChildItem -Path (Join-Path $workspaceRoot 'service-packs') -Filter 'manifest.yaml' -File -Recurse)
-foreach ($servicePackManifest in $servicePackManifests) {
-    $manifestContent = Get-Content -Raw -LiteralPath $servicePackManifest.FullName
+$supportDomainManifests = @(Get-ChildItem -Path (Join-Path $workspaceRoot 'support-domains') -Filter 'manifest.yaml' -File -Recurse)
+foreach ($supportDomainManifest in $supportDomainManifests) {
+    $manifestContent = Get-Content -Raw -LiteralPath $supportDomainManifest.FullName
     $requiredValuePatterns = @(
         '(?m)^value:\s*$',
         '(?m)^\s+proofStatus:\s+(unproven|baseline-recorded|value-demonstrated|no-value)\s*$',
@@ -239,7 +242,7 @@ foreach ($servicePackManifest in $servicePackManifests) {
 
     foreach ($requiredValuePattern in $requiredValuePatterns) {
         if ($manifestContent -notmatch $requiredValuePattern) {
-            throw "Service-pack value proof metadata is incomplete: $($servicePackManifest.FullName)"
+            throw "Support-domain value proof metadata is incomplete: $($supportDomainManifest.FullName)"
         }
     }
 }
@@ -521,7 +524,7 @@ if ($deploymentPlan -notmatch '## Coding Engine Requirement For This Case Study'
     Agents = $agentFiles.Count
     VisibleAgent = $visibleAgents[0].Name
     Skills = $skillFiles.Count
-    ServicePacks = $servicePackManifests.Count
+    SupportDomains = $supportDomainManifests.Count
     CapabilityOverlays = $capabilities.Count
     ReusableArtifacts = $artifacts.Count
     CliOperations = $registeredOperations.Count

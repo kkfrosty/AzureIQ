@@ -6,7 +6,7 @@ The catalog complements rather than replaces:
 
 - live MCP/extension tool descriptions for current platform capabilities;
 - `capabilities/registry.json` for routing constraints and proven gaps;
-- service packs for service-specific operating knowledge;
+- support domains for service-specific operating knowledge;
 - Azure as the source of current resource state;
 - the runtime execution ledger for what actually ran.
 

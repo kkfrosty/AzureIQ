@@ -1,0 +1,22 @@
+// Azure Container Apps platform evidence for cold starts, scaling, scheduling, and restarts.
+// This table belongs to the Container Apps managed-environment workspace, which may differ
+// from workspaces receiving gateway or application telemetry.
+let Lookback = 1h;
+let TargetContainerAppName = "";
+ContainerAppSystemLogs_CL
+| where TimeGenerated >= ago(Lookback)
+| where isempty(TargetContainerAppName) or ContainerAppName_s =~ TargetContainerAppName
+| project
+    TimeGenerated,
+    ContainerAppName_s,
+    RevisionName_s,
+    ReplicaName_s,
+    Log_s
+| order by TimeGenerated asc
+// Reading the result:
+//   "Scaled ... from 0 to 1" then image pull and container start immediately before a slow success
+//     => scale-from-zero cold start, not a gateway, policy, or application failure.
+//   repeated replica scheduling, restarts, or failed image pulls around the incident
+//     => Container Apps platform evidence that requires backend-platform diagnosis.
+//   no system events while requests fail fast on a warm replica
+//     => the platform is not implicated; localize inside the application or an upstream service.

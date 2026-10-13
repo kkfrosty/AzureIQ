@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Waypoint Freight | AI Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+    <div>
+        <header class="chat-header">
+            <div class="brand">
+                <span class="brand-mark">WF</span>
+                <div>
+                    <strong>Waypoint Freight</strong>
+                    <span>AI Assistant</span>
+                </div>
+            </div>
+            <a class="back-link" href="index.html">Shipment console</a>
+        </header>
+
+        <main class="chat-shell">
+            <section class="chat-controls" aria-labelledby="chat-connection-heading">
+                <h1 id="chat-connection-heading">Model gateway</h1>
+                <label class="chat-field chat-field-grow">
+                    <span>AI gateway URL</span>
+                    <input id="gateway-url" type="url" autocomplete="url" spellcheck="false" placeholder="https://apim-ai-xxxxxxxx.azure-api.net/ai">
+                </label>
+                <label class="chat-field">
+                    <span>Gateway subscription key</span>
+                    <input id="gateway-key" type="password" autocomplete="off" spellcheck="false">
+                </label>
+                <label class="chat-field">
+                    <span>Model deployment</span>
+                    <select id="model-select"></select>
+                </label>
+                <label class="chat-field">
+                    <span>API version</span>
+                    <input id="api-version" type="text" spellcheck="false">
+                </label>
+                <button id="reset-button" class="chat-secondary" type="button">Clear conversation</button>
+            </section>
+
+            <section class="chat-status" aria-live="polite">
+                <span id="chat-state">Enter the gateway URL and subscription key to start.</span>
+                <span id="chat-usage"></span>
+            </section>
+
+            <section class="chat-log-wrap" aria-labelledby="chat-log-heading">
+                <h2 id="chat-log-heading" class="visually-hidden">Conversation</h2>
+                <ol id="chat-log" class="chat-log"></ol>
+            </section>
+
+            <form id="chat-form" class="chat-composer">
+                <label class="visually-hidden" for="chat-input">Message</label>
+                <textarea id="chat-input" rows="2" placeholder="Ask the assistant a question..." required></textarea>
+                <button id="send-button" type="submit">Send</button>
+            </form>
+        </main>
+    </div>
+
+    <script src="chat-config.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>

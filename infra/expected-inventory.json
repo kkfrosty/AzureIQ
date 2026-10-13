@@ -10,7 +10,7 @@
   "resources": [
     {
       "type": "Microsoft.OperationalInsights/workspaces",
-      "count": 2,
+      "count": 1,
       "sourceOutput": "AZURE_LOG_ANALYTICS_WORKSPACE_ID"
     },
     {
@@ -34,15 +34,16 @@
     },
     {
       "type": "Microsoft.ContainerRegistry/registries",
-      "count": 1
+      "count": 1,
+      "sourceOutput": "AZURE_CONTAINER_REGISTRY_ENDPOINT"
     },
     {
       "type": "Microsoft.Insights/metricAlerts",
-      "count": 5
+      "count": 3
     },
     {
       "type": "Microsoft.Insights/scheduledQueryRules",
-      "count": 1
+      "count": 2
     },
     {
       "type": "Microsoft.Insights/activityLogAlerts",
@@ -59,8 +60,7 @@
   ],
   "allowedChildResourcePrefixes": [
     "Microsoft.ApiManagement/service/",
-    "Microsoft.Insights/diagnosticSettings",
-    "Microsoft.Web/sites/basicPublishingCredentialsPolicies"
+    "Microsoft.Insights/diagnosticSettings"
   ],
   "externalResources": [
     {

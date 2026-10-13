@@ -1,0 +1,75 @@
+{
+  "$schema": "../../schemas/expected-inventory.schema.json",
+  "schemaVersion": 1,
+  "environmentBoundary": "resource-group",
+  "requiredOwnershipTags": {
+    "managedBy": "AzureIQ",
+    "lifecycle": "ephemeral",
+    "caseStudy": "AIFoundryGateway"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "count": 1,
+      "sourceOutput": "AZURE_LOG_ANALYTICS_WORKSPACE_ID"
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "count": 1,
+      "sourceOutput": "APPLICATION_INSIGHTS_NAME"
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "count": 1,
+      "sourceOutput": "AI_FOUNDRY_NAME"
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/projects",
+      "count": 1,
+      "sourceOutput": "AI_FOUNDRY_PROJECT_NAME"
+    },
+    {
+      "type": "Microsoft.ApiManagement/service",
+      "count": 1,
+      "sourceOutput": "API_MANAGEMENT_NAME"
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "count": 2
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "count": 1
+    },
+    {
+      "type": "Microsoft.AlertsManagement/smartDetectorAlertRules",
+      "count": 1
+    }
+  ],
+  "allowedChildResourcePrefixes": [
+    "Microsoft.ApiManagement/service/",
+    "Microsoft.CognitiveServices/accounts/deployments",
+    "Microsoft.Insights/diagnosticSettings"
+  ],
+  "externalResources": [],
+  "teardownBlockers": [
+    "unknown resource type or ownership",
+    "resource lock",
+    "resource without matching environmentId",
+    "persistent or protected data",
+    "active resource outside the recorded resource group",
+    "model deployment still serving production traffic"
+  ],
+  "softDelete": {
+    "Microsoft.ApiManagement/service": {
+      "retentionHours": 48,
+      "purgeRequiresSeparateApproval": true,
+      "nextRunUsesUniqueEnvironmentId": true
+    },
+    "Microsoft.CognitiveServices/accounts": {
+      "retentionHours": 48,
+      "purgeRequiresSeparateApproval": true,
+      "nextRunUsesUniqueEnvironmentId": true
+    }
+  }
+}
