@@ -18,6 +18,19 @@ function Test-Field {
     return $null -ne $Value.PSObject.Properties[$Name]
 }
 
+function Get-SafeEvidenceCategory {
+    param([string]$Category)
+    $codes = @('ACCESS_DENIED', 'NOT_FOUND', 'THROTTLED', 'UNSUPPORTED_OR_BAD_REQUEST',
+        'CLI_READ_FAILED', 'CLI_READ_TIMEOUT', 'INVALID_CLI_JSON')
+    if ($Category -in $codes -or $Category -in @('SUBNET_REFERENCE_UNAVAILABLE', 'INVALID_NETWORK_REFERENCE')) { return $Category }
+    foreach ($prefix in @('SUBNET_', 'VNET_', 'NETWORK_RULE_')) {
+        foreach ($code in $codes) {
+            if ($Category -eq "$prefix$code") { return $Category }
+        }
+    }
+    return 'UNCLASSIFIED_READ_GAP'
+}
+
 function Get-Selectors {
     param($Rule, [string]$Single, [string]$Multiple)
     $plural = @(Get-Field $Rule $Multiple)
@@ -94,7 +107,9 @@ function Test-PortSet {
 }
 
 function Get-NsgFlowVerdict {
-    param($Nsg, [string]$Direction, [string]$Source, [string]$Destination, [int]$Port, [string]$Protocol)
+    param($Nsg, [string]$Direction, [string]$Source, [string]$Destination, [int]$Port, [string]$Protocol, [ref]$Evidence)
+    $evaluation = @{ reason = 'MissingRuleEvidence'; priority = $null; ruleOrdinal = $null; access = $null }
+    if ($null -ne $Evidence) { $Evidence.Value = $evaluation }
     $properties = Get-Field $Nsg 'properties'
     if ($null -eq $properties) { return 'Unknown' }
     $custom = Get-Field $properties 'securityRules'
@@ -109,12 +124,14 @@ function Get-NsgFlowVerdict {
         if (-not [int]::TryParse([string](Get-Field $p 'priority'), [ref]$priority) -or
             $priority -lt 100 -or $priority -gt 65500 -or
             (Get-Field $p 'direction') -notin @('Inbound', 'Outbound') -or
-            (Get-Field $p 'access') -notin @('Allow', 'Deny')) { return 'Unknown' }
+            (Get-Field $p 'access') -notin @('Allow', 'Deny')) { $evaluation.reason = 'MalformedRule'; return 'Unknown' }
         # NSGs allow the same priority in opposite directions, but not duplicate priorities within a direction.
-        if ((Get-Field $p 'direction') -eq $Direction -and -not $priorities.Add($priority)) { return 'Unknown' }
+        if ((Get-Field $p 'direction') -eq $Direction -and -not $priorities.Add($priority)) { $evaluation.reason = 'DuplicatePriority'; return 'Unknown' }
     }
     $uncertainPrecedence = $false
+    $ordinal = 0
     foreach ($rule in $rules) {
+        $ordinal++
         $p = Get-Field $rule 'properties'
         if ((Get-Field $p 'direction') -ne $Direction) { continue }
         $ruleProtocol = Get-Field $p 'protocol'
@@ -131,17 +148,116 @@ function Get-NsgFlowVerdict {
             @(Get-Field $p 'destinationApplicationSecurityGroups' | Where-Object { $null -ne $_ }).Count -gt 0
         if ($sourceMatch -eq 'Unknown' -or $destinationMatch -eq 'Unknown' -or
             $destinationPort -eq 'Unknown' -or -not $allSourcePorts -or $hasAsg) {
+            if (-not $uncertainPrecedence) {
+                $evaluation.reason = 'AmbiguousEarlierMatch'
+                $evaluation.priority = [int](Get-Field $p 'priority')
+                $evaluation.ruleOrdinal = $ordinal
+            }
             $uncertainPrecedence = $true
             continue
         }
         if ($uncertainPrecedence) { return 'Unknown' }
+        $evaluation.priority = [int](Get-Field $p 'priority')
+        $evaluation.ruleOrdinal = $ordinal
+        $evaluation.access = Get-Field $p 'access'
         switch (Get-Field $p 'access') {
-            'Allow' { return 'Pass' }
-            'Deny' { return 'Fail' }
+            'Allow' { $evaluation.reason = 'AllowedByRule'; return 'Pass' }
+            'Deny' { $evaluation.reason = 'DeniedByRule'; return 'Fail' }
             default { return 'Unknown' }
         }
     }
+    if (-not $uncertainPrecedence) { $evaluation.reason = 'NoDecisiveRule' }
     return 'Unknown'
+}
+
+function Get-ApimVnetTargetOverview {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)]$Snapshot, [Parameter(Mandatory)]$Report, [switch]$IncludePrivateDetails)
+    function Resource-Name {
+        param($Resource, [string]$Type)
+        $id = [string](Get-Field $Resource 'id')
+        if ($id -match "/$Type/([^/]+)$") { return $Matches[1] }
+        return Get-Field $Resource 'name'
+    }
+    $service = Get-Field $Snapshot 'service'
+    $sku = Get-Field $service 'sku'
+    $properties = Get-Field $service 'properties'
+    $locations = @(@{ virtualNetworkConfiguration = Get-Field $properties 'virtualNetworkConfiguration' })
+    $locations += @(Get-Field $properties 'additionalLocations' | Where-Object { $null -ne $_ })
+    $references = @($locations | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string](Get-Field (Get-Field $_ 'virtualNetworkConfiguration') 'subnetResourceId'))
+    })
+    $supported = ($Report.skuFamily -eq 'classic' -and $Report.networkMode -in @('Internal', 'External')) -or
+        ($Report.skuFamily -eq 'premium-v2' -and $Report.networkMode -eq 'Internal')
+    $injection = if ($Report.networkMode -eq 'None') { 'Not VNet-injected; injection-specific checks skipped' }
+        elseif (-not $supported) { 'Unsupported SKU or network model; injection-specific checks skipped' }
+        elseif ($references.Count -ne $locations.Count) { 'Injection configured; subnet references incomplete' }
+        else { 'Injection configured with subnet references for every service location; connectivity not verified' }
+    $overview = [ordered]@{
+        privateDetails = [bool]$IncludePrivateDetails
+        skuName = Get-Field $sku 'name'; capacity = Get-Field $sku 'capacity'
+        primaryRegion = Get-Field $service 'location'; provisioningState = Get-Field $properties 'provisioningState'
+        networkMode = $Report.networkMode; injection = $injection
+        selectedRules = $(if ($supported) { $Report.skuFamily } else { 'None: supported injection not detected' })
+        regions = @(
+            foreach ($region in @(Get-Field $Snapshot 'regions' | Where-Object { $null -ne $_ })) {
+                $subnet = Get-Field $region 'subnet'
+                $subnetProperties = Get-Field $subnet 'properties'
+                $vnet = Get-Field $region 'virtualNetwork'
+                $vnetProperties = Get-Field $vnet 'properties'
+                $prefixes = @(Get-Selectors $subnetProperties 'addressPrefix' 'addressPrefixes' | Where-Object { $null -ne $_ })
+                $nsg = Get-Field $subnetProperties 'networkSecurityGroup'
+                $route = Get-Field $subnetProperties 'routeTable'
+                $dhcp = Get-Field $vnetProperties 'dhcpOptions'
+                $dnsServers = @(Get-Field $dhcp 'dnsServers' | Where-Object { $null -ne $_ })
+                $item = [ordered]@{
+                    location = Get-Field $region 'location'; capacity = Get-Field $region 'capacity'
+                    vnetRegion = Get-Field $vnet 'location'
+                    subnetEvidence = $(if ($null -eq $subnetProperties) { 'Unavailable' } else { 'Collected' })
+                    nsgAttachment = $(if ($null -eq $subnetProperties) { 'Unknown' } elseif ($null -eq $nsg) { 'None' } else { 'Attached' })
+                    routeTableAttachment = $(if ($null -eq $subnetProperties) { 'Unknown' } elseif ($null -eq $route) { 'None' } else { 'Attached' })
+                    dnsMode = $(if (-not (Test-Field $dhcp 'dnsServers')) { 'Unknown: DNS configuration not collected' } elseif ($dnsServers.Count -gt 0) { 'Custom DNS servers configured' } else { 'Azure-provided DNS configured' })
+                    prefixSizes = @($prefixes | ForEach-Object { if ([string]$_ -match '/(\d{1,3})$') { "/$($Matches[1])" } })
+                    evidenceGaps = @(Get-Field $region 'evidenceGaps' | Where-Object { $null -ne $_ } | ForEach-Object { Get-SafeEvidenceCategory ([string]$_) })
+                }
+                if ($IncludePrivateDetails) {
+                    $item.vnetName = Resource-Name $vnet 'virtualNetworks'
+                    $item.subnetName = Resource-Name $subnet 'subnets'
+                    $item.nsgName = Resource-Name $nsg 'networkSecurityGroups'
+                    $item.routeTableName = Resource-Name $route 'routeTables'
+                    $item.vnetAddressSpaces = @(Get-Field (Get-Field $vnetProperties 'addressSpace') 'addressPrefixes' | Where-Object { $null -ne $_ })
+                    $item.subnetPrefixes = $prefixes
+                    $item.dnsServers = $dnsServers
+                }
+                $item
+            }
+        )
+    }
+    if ($IncludePrivateDetails) {
+        $overview.serviceName = Resource-Name $service 'service'
+        $id = [string](Get-Field $service 'id')
+        $overview.resourceGroup = if ($id -match '/resourceGroups/([^/]+)/') { $Matches[1] } else { $null }
+    }
+    return $overview
+}
+
+function Get-ApimVnetToolContract {
+    $rules = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'rules.json') | ConvertFrom-Json -AsHashtable
+    return [ordered]@{
+        tool = 'apim.vnet-check'; version = $rules.version; maturity = $rules.status
+        mutatesAzure = $false; generatesApplicationTraffic = $false; checks = 'All applicable sections run on every assessment'
+        entryPoint = 'support-domains\api-management\tools\vnet-check\Test-ApimVnet.ps1'
+        liveArguments = @('-ServiceName <name>', '-ResourceGroup <name>')
+        offlineArguments = @('-SnapshotPath <path>')
+        scope = 'Ignored private configuration; exact active CLI tenant, selected subscription and principal required'
+        outputs = @('report.json', 'report.html', 'execution-record.json')
+        outputStorage = @{
+            sanitized = 'Ignored .azureiq\runs\RUN-...; no target names or address literals'
+            liveOperator = 'Private user-local LocalApplicationData\AzureIQ\Reports\RUN-...; target/network metadata, no tenant/subscription/principal IDs or raw payloads'
+        }
+        exitCodes = @{ '0' = 'Describe only'; '1' = 'Aborted: inspect safe error and audit record'; '2' = 'Assessment completed: issues found'; '3' = 'Assessment completed: inconclusive' }
+        sections = @($rules.sections | ForEach-Object { @{ id = $_.id; title = $_.title; coverage = $_.coverage } })
+    }
 }
 
 function Invoke-ApimVnetAssessment {
@@ -171,10 +287,13 @@ function Invoke-ApimVnetAssessment {
     }
     $findings = [System.Collections.Generic.List[object]]::new()
     function Add-Finding {
-        param([string]$Id, [int]$Region, [string]$Status, [string]$Severity, [string]$Detail, [string]$Source, [string]$EvidenceTimestamp = $null)
+        param([string]$Id, [int]$Region, [string]$Status, [string]$Severity, [string]$Detail, [string]$Source,
+            [string]$EvidenceTimestamp = $null, [string]$EvidenceCategory = $null,
+            [string]$Expected = $null, [string]$Observed = $null, [string]$NextStep = $null, $NsgEvidence = $null)
         $findings.Add([ordered]@{
             ruleId = $Id; regionIndex = $Region; status = $Status; severity = $Severity
-            detail = $Detail; source = $Source; evidenceTimestamp = $EvidenceTimestamp
+            detail = $Detail; source = $Source; evidenceTimestamp = $EvidenceTimestamp; evidenceCategory = $EvidenceCategory
+            expected = $Expected; observed = $Observed; nextStep = $NextStep; nsgEvidence = $NsgEvidence
         })
     }
     $injected = ($family -eq 'classic' -and $mode -in @('Internal', 'External')) -or
@@ -196,7 +315,7 @@ function Invoke-ApimVnetAssessment {
             $regionIndex++
             $source = if ($family -eq 'classic') { $rules.sources.classicSubnet } else { $rules.sources.premiumV2 }
             foreach ($gap in @(Get-Field $region 'evidenceGaps' | Where-Object { $null -ne $_ })) {
-                Add-Finding 'collection-gap' $regionIndex 'Unknown' 'Warning' 'A required configuration read failed or was unavailable. Review collection diagnostics locally.' $source
+                Add-Finding 'collection-gap' $regionIndex 'Unknown' 'Warning' 'A required configuration read failed or was unavailable; the safe category identifies the evidence gap.' $source -EvidenceCategory (Get-SafeEvidenceCategory ([string]$gap))
             }
             $subnet = Get-Field $region 'subnet'
             $subnetProperties = Get-Field $subnet 'properties'
@@ -234,7 +353,7 @@ function Invoke-ApimVnetAssessment {
                     (Get-Field (Get-Field $delegations[0] 'properties') 'serviceName') -eq 'Microsoft.Web/hostingEnvironments'
                 }
                 $status = if ($validDelegation) { 'Pass' } else { 'Fail' }
-                Add-Finding 'delegation' $regionIndex $status $(if ($validDelegation) { 'Info' } else { 'Error' }) "Subnet delegation was checked against the $family requirement." $source
+                Add-Finding 'delegation' $regionIndex $status $(if ($validDelegation) { 'Info' } else { 'Error' }) "Subnet delegation was checked against the $family requirement." $source -Expected $(if ($family -eq 'classic') { 'No subnet delegation' } else { 'Exactly Microsoft.Web/hostingEnvironments delegation' }) -Observed "$($delegations.Count) delegation entries; requirement $status."
             }
             $prefixes = @(Get-Selectors $subnetProperties 'addressPrefix' 'addressPrefixes' | Where-Object { $null -ne $_ })
             $ipv4Prefixes = @($prefixes | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+/\d+$' })
@@ -286,10 +405,21 @@ function Invoke-ApimVnetAssessment {
                     foreach ($destination in $destinations) {
                         $destinationIndex++
                         foreach ($port in $flow.ports) {
-                            $status = Get-NsgFlowVerdict $nsg $flow.direction $flow.source $destination $port $flow.protocol
+                            $nsgEvidence = $null
+                            $status = Get-NsgFlowVerdict $nsg $flow.direction $flow.source $destination $port $flow.protocol -Evidence ([ref]$nsgEvidence)
                             $networkSource = if ($family -eq 'classic') { $rules.sources.classicNetwork } else { $rules.sources.premiumV2 }
                             $label = if ($flow.ContainsKey('regional') -and $flow.regional) { "regional-$destinationIndex" } else { $flow.destination }
-                            Add-Finding "nsg-$($flow.id)-$label-$port" $regionIndex $status $(if ($status -eq 'Fail') { 'Error' } elseif ($status -eq 'Unknown') { 'Warning' } else { 'Info' }) "$($flow.purpose): ordered NSG configuration evaluation, not an end-to-end traffic test." $networkSource
+                            $expectedFlow = "$($flow.direction) $($flow.protocol): $($flow.source) -> $($flow.destination), destination port $port, any source port."
+                            $explanation = switch ($nsgEvidence.reason) {
+                                'DeniedByRule' { 'Blocked by an NSG deny' }
+                                'AllowedByRule' { 'Allowed by an NSG rule' }
+                                'AmbiguousEarlierMatch' { 'A possible earlier rule match prevents a definitive result' }
+                                default { 'Rule evaluation is incomplete or ambiguous' }
+                            }
+                            $observedFlow = if ($null -ne $nsgEvidence.priority) {
+                                "$explanation at priority $($nsgEvidence.priority), ordered rule #$($nsgEvidence.ruleOrdinal). Names and address literals are omitted."
+                            } else { "$explanation; no definitive permit or blocking rule could be identified." }
+                            Add-Finding "nsg-$($flow.id)-$label-$port" $regionIndex $status $(if ($status -eq 'Fail') { 'Error' } elseif ($status -eq 'Unknown') { 'Warning' } else { 'Info' }) "$($flow.purpose): ordered NSG configuration evaluation, not an end-to-end traffic test." $networkSource -Expected $expectedFlow -Observed $observedFlow -NsgEvidence $nsgEvidence
                         }
                     }
                 }
@@ -310,6 +440,40 @@ function Invoke-ApimVnetAssessment {
             $routeTable = Get-Field $region 'routeTable'
             $defaultRoutes = @(Get-Field (Get-Field $routeTable 'properties') 'routes' |
                 Where-Object { $null -ne $_ -and (Get-Field (Get-Field $_ 'properties') 'addressPrefix') -eq '0.0.0.0/0' })
+            if ($family -eq 'classic') {
+                foreach ($endpoint in @('Microsoft.Storage', 'Microsoft.Sql', 'Microsoft.EventHub', 'Microsoft.KeyVault')) {
+                    $expectedEndpoint = "$endpoint service endpoint is recommended for classic forced tunneling; verified firewall routing is an alternative."
+                    if ($endpoint -eq 'Microsoft.Sql' -and $regionIndex -gt 1) {
+                        Add-Finding "service-endpoint-$endpoint" $regionIndex 'NotApplicable' 'Info' 'The classic routing guidance requires the SQL service endpoint recommendation only in the primary region.' $rules.sources.classicRouting -Expected $expectedEndpoint -Observed 'Secondary service location.'
+                        continue
+                    }
+                    $configured = @(Get-Field $subnetProperties 'serviceEndpoints' | Where-Object {
+                        $null -ne $_ -and (Get-Field $_ 'service') -eq $endpoint
+                    })
+                    $endpointStatus = 'Unknown'
+                    $endpointObserved = 'No matching configured endpoint was observed. This is not proof of a fault.'
+                    if ($configured.Count -gt 0) {
+                        $states = @($configured | ForEach-Object { Get-Field $_ 'provisioningState' })
+                        if ($states.Count -gt 0 -and @($states | Where-Object { $_ -ne 'Succeeded' }).Count -eq 0) {
+                            $endpointStatus = 'Pass'
+                            $endpointObserved = 'Matching service endpoint configuration reports Succeeded; destination reachability is not established.'
+                        } elseif ('Failed' -in $states) {
+                            $endpointStatus = 'Fail'
+                            $endpointObserved = 'Matching service endpoint configuration reports provisioning Failed.'
+                        } else { $endpointObserved = 'Matching endpoint exists, but successful provisioning is not established.' }
+                    }
+                    $nextEndpoint = if ($endpoint -eq 'Microsoft.EventHub') {
+                        'First establish whether Event Hubs is used; then verify endpoint or firewall routing. Do not require an unused optional feature.'
+                    } elseif ($defaultRoutes.Count -gt 0) {
+                        'A default UDR is present. Verify this service endpoint or the documented firewall alternative; do not automatically enable an endpoint.'
+                    } else {
+                        'No default UDR was observed; check BGP/effective routes before deciding this recommendation applies.'
+                    }
+                    Add-Finding "service-endpoint-$endpoint" $regionIndex $endpointStatus $(if ($endpointStatus -eq 'Fail') { 'Error' } elseif ($endpointStatus -eq 'Unknown') { 'Warning' } else { 'Info' }) 'Service-endpoint configuration is assessed separately from the NSG and effective network path.' $rules.sources.classicRouting -Expected $expectedEndpoint -Observed $endpointObserved -NextStep $nextEndpoint
+                }
+            } else {
+                Add-Finding 'service-endpoint-classic-guidance' $regionIndex 'NotApplicable' 'Info' 'Do not impose classic forced-tunneling endpoint recommendations on Premium v2 injection.' $rules.sources.premiumV2 -Expected 'Use Premium v2 requirements, including Key Vault egress.' -Observed 'Premium v2 injection was discovered.'
+            }
             $detail = if ($defaultRoutes.Count -gt 0) {
                 'A default UDR is configured. Check next-hop appliance policy, dependency routes, BGP and asymmetric return paths; a default route alone does not prove failure.'
             } else { 'No default UDR was observed. Effective routes, BGP, peering and firewall policy are not proven by this snapshot.' }
@@ -323,7 +487,7 @@ function Invoke-ApimVnetAssessment {
         }
         $native = Get-Field $Snapshot 'nativeNetworkStatus'
         if ((Get-Field $native 'available') -ne $true) {
-            Add-Finding 'native-network-status' 0 'Unknown' 'Warning' 'Native APIM network status is unavailable or unsupported. Absence is not a connectivity success.' $rules.sources.networkStatus
+            Add-Finding 'native-network-status' 0 'Unknown' 'Warning' 'Native APIM network status is unavailable or unsupported. Absence is not a connectivity success.' $rules.sources.networkStatus -EvidenceCategory (Get-SafeEvidenceCategory ([string](Get-Field $native 'errorCategory')))
         } else {
             $nativeLocations = @(Get-Field $native 'locations' | Where-Object { $null -ne $_ })
             if ($nativeLocations.Count -eq 0) {
@@ -373,19 +537,51 @@ function Invoke-ApimVnetAssessment {
     if (($Now - $capturedAt).TotalMinutes -gt $MaxStatusAgeMinutes -or ($capturedAt - $Now).TotalMinutes -gt 5) {
         Add-Finding 'snapshot-freshness' 0 'Unknown' 'Warning' 'Configuration snapshot is stale or future-dated; findings describe that capture, not current Azure state.' $rules.sources.networkStatus
     }
+    foreach ($finding in $findings) {
+        $section = @($rules.sections | Where-Object { $finding.ruleId -match $_.pattern })[0]
+        $finding.sectionId = $section.id
+        if (-not $finding.expected) { $finding.expected = "Meet the applicable SKU-specific requirement; see the linked Microsoft documentation." }
+        if (-not $finding.observed) { $finding.observed = $finding.detail }
+        if (-not $finding.nextStep) { $finding.nextStep = $section.nextStep }
+    }
+    $sections = [System.Collections.Generic.List[object]]::new()
+    foreach ($definition in $rules.sections) {
+        $items = @($findings | Where-Object sectionId -eq $definition.id)
+        if ($items.Count -eq 0) {
+            $reference = if ($family -eq 'premium-v2' -and $definition.id -notin @('native-status', 'evidence')) { $rules.sources.premiumV2 } else { $rules.sources[$definition.source] }
+            $coverageStatus = if (-not $injected -and $mode -eq 'None' -and $definition.id -ne 'evidence') { 'NotApplicable' } else { 'Unknown' }
+            $coverageDetail = if ($coverageStatus -eq 'NotApplicable') { 'Injection-specific checks skipped because the service network mode is None.' } else { 'This documentation area was not evaluated from the available evidence. It is not a passed test.' }
+            Add-Finding "coverage-$($definition.id)" 0 $coverageStatus $(if ($coverageStatus -eq 'NotApplicable') { 'Info' } else { 'Warning' }) $coverageDetail $reference -Expected $definition.coverage -Observed $coverageDetail -NextStep $definition.nextStep
+            $findings[$findings.Count - 1].sectionId = $definition.id
+            $items = @($findings[$findings.Count - 1])
+        }
+        $counts = @{
+            failed = @($items | Where-Object status -eq 'Fail').Count
+            unknown = @($items | Where-Object status -eq 'Unknown').Count
+            passed = @($items | Where-Object status -eq 'Pass').Count
+            notApplicable = @($items | Where-Object status -eq 'NotApplicable').Count
+        }
+        $sections.Add(@{
+            id = $definition.id; title = $definition.title; coverage = $definition.coverage; counts = $counts
+            status = $(if ($counts.failed -gt 0) { 'Fail' } elseif ($counts.unknown -gt 0) { 'Unknown' } elseif ($counts.passed -gt 0) { 'Pass' } else { 'NotApplicable' })
+        })
+    }
     $failed = @($findings | Where-Object status -eq 'Fail').Count
     $unknown = @($findings | Where-Object status -eq 'Unknown').Count
-    return [ordered]@{
+    $report = [ordered]@{
         schemaVersion = 1; toolVersion = $rules.version; maturity = 'candidate'; valueProof = 'unproven'
-        assessedAt = $Now.ToString('o'); capturedAt = $capturedAt.ToString('o')
+        assessedAt = $Now.ToString('o'); capturedAt = $capturedAt.ToString('o'); assessmentMode = 'Snapshot'
         skuFamily = $family; networkMode = $(if ($mode -in @('Internal', 'External', 'None')) { $mode } else { 'Unknown' })
         result = $(if ($failed -gt 0) { 'ISSUES_FOUND' } else { 'INCONCLUSIVE' })
-        summary = @{ failed = $failed; unknown = $unknown; passed = @($findings | Where-Object status -eq 'Pass').Count }
+        summary = @{ failed = $failed; unknown = $unknown; passed = @($findings | Where-Object status -eq 'Pass').Count; notApplicable = @($findings | Where-Object status -eq 'NotApplicable').Count }
         problemDefinition = 'Assess VNet-injected APIM configuration and dependency observations without changing Azure or generating application traffic.'
         diagnosis = 'Rule results distinguish configuration blockers, native observations and missing evidence. Pass means only that the stated check passed.'
         rootCauseAnalysis = @{ confidence = 'undetermined'; behavior = 'Not classified without service-specific expected behavior and traffic evidence.' }
         findings = $findings.ToArray()
+        sections = $sections.ToArray()
     }
+    $report.targetOverview = Get-ApimVnetTargetOverview -Snapshot $Snapshot -Report $report
+    return $report
 }
 
-Export-ModuleMember -Function Invoke-ApimVnetAssessment
+Export-ModuleMember -Function Invoke-ApimVnetAssessment, Get-ApimVnetToolContract, Get-ApimVnetTargetOverview

@@ -10,6 +10,57 @@
   "artifacts": [
     {
       "id": "apim.vnet-check",
+      "version": "0.2.0",
+      "kind": "cli-workflow",
+      "executionMode": "read-only",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Copilot-discoverable APIM VNet assessment with automatic SKU-specific selection, target/network overview, twelve coverage sections, endpoint/NSG evidence and private operator HTML/JSON separate from sanitized audit artifacts.",
+      "intents": ["run all read-only APIM VNet checks", "generate and analyze sectioned APIM networking HTML reports"],
+      "source": {
+        "path": "../support-domains/api-management/tools/vnet-check/rules.json",
+        "sha256": "6532256b44eb408304e7211f4ffd385b91e46ad7893ea781c2459f9cc60f127c",
+        "entryPoint": "support-domains/api-management/tools/vnet-check/Test-ApimVnet.ps1"
+      },
+      "compatibility": {
+        "resourceTypes": ["Microsoft.ApiManagement/service", "Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/routeTables"],
+        "clouds": ["AzureCloud"],
+        "environments": ["non-production", "production-read-only"],
+        "conditions": ["classic Developer/Premium injection or Premium v2 internal injection", "PowerShell 7.4 or later", "live collection requires existing Azure CLI authentication and exact private scope/principal", "HTML is a point-in-time report, not continuous monitoring", "named live operator reports stay in private user-local storage outside the repository; offline reports are not live evidence"]
+      },
+      "parameters": [
+        { "name": "Describe", "required": false, "sensitive": false, "source": "artifact-default" },
+        { "name": "service and resource group names", "required": false, "sensitive": true, "source": "derived" },
+        { "name": "offline snapshot path", "required": false, "sensitive": true, "source": "derived" },
+        { "name": "private tenant, subscription and reader principal", "required": false, "sensitive": true, "source": "private-config" }
+      ],
+      "decisionPoints": [
+        {
+          "id": "ambiguous-target",
+          "condition": "The user context and scoped inventory do not identify one APIM service.",
+          "question": "Which APIM service should the read-only assessment target?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-14",
+        "expiresAt": null,
+        "methods": ["offline SKU, NSG, endpoint, section coverage, HTML encoding and command-contract tests", "mocked collector and scope guards", "synthetic browser interaction validation"],
+        "evidenceRefs": ["support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1", "support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Collector.Tests.ps1", "support-domains/api-management/tools/vnet-check/COPILOT.md"]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": ["SKU, network model or Microsoft requirements change", "API versions or authentication adapter change", "report or Copilot invocation contract changes"],
+        "updatePolicy": "Candidate until live/model-routing comparison; version behavioral changes and preserve older source digests."
+      },
+      "owners": ["AzureIQ APIM support domain"],
+      "supersedes": ["apim.vnet-check@0.1.0"],
+      "supersededBy": null
+    },
+    {
+      "id": "apim.vnet-check",
       "version": "0.1.0",
       "kind": "cli-workflow",
       "executionMode": "read-only",
@@ -18,7 +69,7 @@
       "description": "SKU-discovered, read-only APIM VNet configuration checks for classic Developer/Premium and Premium v2 injection, with explicit unknowns and sanitized reports.",
       "intents": ["check APIM VNet injection configuration", "identify APIM network configuration blockers"],
       "source": {
-        "path": "../support-domains/api-management/tools/vnet-check/rules.json",
+        "path": "../support-domains/api-management/tools/vnet-check/versions/0.1.0/rules.json",
         "sha256": "f78570ffc8de10f2ddcc21c907e9d0f1202d7449c5654e17ef914d6cf91b26e6",
         "entryPoint": "support-domains/api-management/tools/vnet-check/Test-ApimVnet.ps1"
       },
@@ -56,7 +107,7 @@
       },
       "owners": ["AzureIQ APIM support domain"],
       "supersedes": [],
-      "supersededBy": null
+      "supersededBy": "apim.vnet-check@0.2.0"
     },
     {
       "id": "azure.resource-group.ensure",

@@ -16,14 +16,14 @@
   "capabilities": [
     {
       "id": "apim.vnet-configuration.assess",
-      "intents": ["check VNet-injected APIM configuration", "identify APIM subnet, NSG, DNS and routing evidence gaps"],
+      "intents": ["check VNet-injected APIM configuration", "identify APIM subnet, NSG, DNS and routing evidence gaps", "run all APIM network checks and generate an HTML report", "analyze APIM networking section by section"],
       "owner": "composite",
       "status": "draft",
       "valueProof": "unproven",
       "primary": {
-        "kind": "mcp",
-        "selector": "mcp_azure_mcp_ser_applens",
-        "operation": "service-supported diagnosis when an incident exists"
+        "kind": "support-domain",
+        "selector": "support-domains/api-management/tools/vnet-check",
+        "operation": "Follow COPILOT.md; invoke Test-ApimVnet.ps1 -Describe, run all applicable sections, confirm targetOverview in sanitized report.json and link the returned HtmlReport; named live operator reports stay outside the repository"
       },
       "limitations": [
         "The standalone checker is candidate and offline-tested only; no VNet live baseline comparison has been performed.",
@@ -33,12 +33,12 @@
       ],
       "requiredEvidence": ["discovered SKU and injection mode", "every service location's subnet, NSG and route configuration", "fresh native status when available", "separate client/backend traffic evidence for causal diagnosis"],
       "fallback": {
-        "kind": "support-domain",
-        "selector": "support-domains/api-management/tools/vnet-check",
-        "operation": "Test-ApimVnet.ps1"
+        "kind": "mcp",
+        "selector": "mcp_azure_mcp_ser_applens",
+        "operation": "service-supported diagnosis; attempt first for active incidents, but not a substitute for the requested checker report"
       },
       "verification": ["Run deterministic offline tests for both SKU families.", "Compare against AppLens/MCP on approved known-good and disposable faulty configurations before promotion.", "Use independent traffic evidence; never declare health from configuration checks alone."],
-      "references": ["../support-domains/api-management/tools/vnet-check/README.md", "../support-domains/api-management/tools/vnet-check/SOURCES.md"]
+      "references": ["../support-domains/api-management/tools/vnet-check/README.md", "../support-domains/api-management/tools/vnet-check/SOURCES.md", "../support-domains/api-management/tools/vnet-check/COPILOT.md", "../.github/prompts/apim-vnet-check.prompt.md"]
     },
     {
       "id": "azure.incident.diagnose",

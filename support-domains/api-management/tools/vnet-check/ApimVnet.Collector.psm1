@@ -141,7 +141,8 @@ function Get-ApimVnetSnapshot {
     $regions = [System.Collections.Generic.List[object]]::new()
     foreach ($location in $locations) {
         $region = @{
-            location = $location.location; capacity = $location['capacity']
+            location = $location.location
+            capacity = $(if ($null -ne $location['sku']) { $location.sku['capacity'] } else { $location['capacity'] })
             subnet = $null; virtualNetwork = $null; networkSecurityGroup = $null; routeTable = $null
             evidenceGaps = [System.Collections.Generic.List[string]]::new()
         }

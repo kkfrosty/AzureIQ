@@ -1,6 +1,6 @@
 # APIM VNet Checker
 
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 **Status:** candidate; value unproven; offline tested, not live validated.
 
@@ -31,6 +31,14 @@ Each CLI process has a 60-second timeout, and collection is limited to ten servi
 
 ## Run against an APIM service
 
+### Ask GitHub Copilot
+
+Say: **"Check the networking for APIM `<name>` in resource group `<group>`, run all available read-only checks, and explain the HTML report."**
+
+Workspace routing and the optional `/apim-vnet-check` prompt point to [the fixed Copilot workflow](COPILOT.md). Copilot discovers arguments with `-Describe`, runs every applicable section, reads the JSON, and links the HTML. Users do not need to know the SKU or select tests. Unknown/manual evidence remains explicit.
+
+### Command line
+
 From the repository root, using placeholders replaced at runtime:
 
 ```powershell
@@ -41,7 +49,17 @@ pwsh -NoProfile -File .\support-domains\api-management\tools\vnet-check\Test-Api
 
 The tool discovers every service location and reads the referenced subnet, VNet, NSG and route table. It attempts the native APIM `networkstatus` GET for both supported SKU families, treating unsupported or unavailable responses as unknown rather than assuming Premium v2 exposes classic platform dependencies.
 
-Private scope stays in memory. Raw service responses, certificates, hostnames, DNS IPs, native error text and resource IDs are not written to the report or execution record. The collector does not export raw snapshots.
+For the machine-readable invocation contract, supported sections, output names and exit codes:
+
+```powershell
+pwsh -NoProfile -File .\support-domains\api-management\tools\vnet-check\Test-ApimVnet.ps1 -Describe
+```
+
+This command makes no Azure calls and creates no assessment records.
+
+Private authentication scope stays in memory. Tenant/subscription/principal identifiers, raw service responses, certificates, native hostnames/errors and full resource IDs are never exported. The collector does not export raw snapshots.
+
+Live runs additionally create a private operator HTML/JSON report under the current user's local application-data folder, `AzureIQ\Reports\RUN-...`, outside the repository. This report intentionally contains APIM/resource-group/VNet/subnet/NSG/route-table names, address spaces, subnet prefixes and custom DNS IPs. This is operational metadata, not a publishable artifact: do not commit, share publicly or copy it into chat memory. It inherits the user-local folder's access permissions; it is not encrypted. The tool rejects paths inside the workspace or through filesystem reparse points instead of silently falling back to repository storage.
 
 ## Offline assessment
 
@@ -58,7 +76,19 @@ The [test suite](tests/Test-ApimVnet.Tests.ps1) constructs synthetic classic and
 
 ## Results
 
-Every successful assessment writes sanitized `report.json` and a schema-conforming `execution-record.json` beneath ignored `.azureiq/runs/RUN-.../`. Findings include a rule ID, ordinal region reference, status, severity, explanation and official source URL. Report sections are problem definition, diagnosis and root cause analysis; root cause stays `undetermined` without causal traffic evidence.
+Every completed assessment writes sanitized `report.json`, a self-contained sanitized `report.html`, and a schema-conforming `execution-record.json` beneath ignored `.azureiq/runs/RUN-.../`. These files contain no target names or address literals. Audit privacy assertions describe these sanitized run artifacts; detailed operator reports are kept separately outside the repository.
+
+For live runs, `HtmlReport` points to the private operator HTML and `OperatorReport` to its private JSON. `Report` always points to the sanitized analysis JSON; `AssessmentMode` distinguishes live collection from offline input. Offline runs do not create detailed operator reports, and their HTML prominently states **OFFLINE / SNAPSHOT - NOT LIVE AZURE EVIDENCE**. Synthetic test previews must never be presented as a real-service diagnosis.
+
+The opening overview shows the exact discovered SKU, capacity, primary region, provisioning state, network mode, injection applicability and selected SKU-specific rules. Each collected location maps to the finding's region ordinal and includes VNet region, regional capacity, subnet evidence, prefix sizes, DNS mode, attachments and collection gaps. The live private report also identifies the APIM/resource group and network names/settings. Unreadable metadata is explicitly unavailable. A configured injection mode is not proof of connectivity; incomplete subnet references are flagged. Noninjected services skip injection-specific checks, and unsupported SKUs/models remain inconclusive.
+
+The JSON command output includes report paths and a section summary. Findings include expected/observed configuration, next steps, ordinal region references, documentation links and safe evidence. NSG findings identify the matched rule priority/ordinal without retaining private rule names or address literals.
+
+The HTML has twelve navigable sections: discovery, subnet/capacity, NSGs, service endpoints, routing, DNS, native dependency status, TLS, client/backend traffic, optional features, infrastructure egress, and evidence quality. Failed and unknown checks are shown first. Search, status filters, expandable sections, count summaries and print support make it usable without reading raw JSON. Documentation areas without automated evidence are visible unknowns, not omitted passes.
+
+Reports retain problem definition, diagnosis and root cause analysis; root cause stays `undetermined` without causal traffic evidence. Reports are point-in-time snapshots: rerun to refresh, not continuous monitoring. No CDN, telemetry, external assets or background network calls are used.
+
+Aborted assessments also attempt to write a sanitized failure execution record. Permission and unsupported-API gaps retain only allowlisted diagnostic categories, not raw Azure errors. If the audit record cannot be written, that failure is reported explicitly.
 
 | Finding | Meaning |
 | --- | --- |
@@ -68,11 +98,12 @@ Every successful assessment writes sanitized `report.json` and a schema-conformi
 
 | Process exit | Meaning |
 | --- | --- |
+| 0 | Metadata discovery with `-Describe`; not a service-health verdict |
 | 1 | Input, scope, authentication, initial read or tool failure; no success verdict |
 | 2 | Assessment completed with at least one failed check; see the report |
 | 3 | Assessment completed without failed checks, but connectivity remains inconclusive |
 
-Version 0.1.0 intentionally has no healthy/exit-zero service verdict. A clean static configuration does not establish correct DNS, routing, backend behavior or policy execution. Successful test-suite execution, unlike assessment, exits zero.
+Version 0.2.0 intentionally has no healthy/exit-zero service assessment verdict. A clean static configuration does not establish correct DNS, routing, backend behavior or policy execution. Successful metadata discovery and test-suite execution exit zero.
 
 Native observations older than 30 minutes or more than five minutes in the future are unknown. Use `-MaxStatusAgeMinutes` to change the age threshold. Stale configuration captures are labeled; their findings describe captured configuration, not current live state.
 
@@ -87,6 +118,7 @@ Native observations older than 30 minutes or more than five minutes in the futur
 | NSG | Attachment; ordered custom/default rules, direction, protocol, singular/plural address and port selectors, port ranges |
 | Classic dependencies | Management 3443, external HTTPS 443, Premium probe 6390, certificate HTTP 80, Storage 443, SQL 1433, Key Vault 443, Azure Monitor 1886/443 |
 | Regional tags | Storage/SQL coverage evaluated for both local and primary regions |
+| Service endpoints | Classic Storage, SQL, Event Hubs and Key Vault endpoint presence/provisioning; SQL recommendation limited to primary region. Missing endpoints are unknown because firewall routing can be a valid alternative. Premium v2 does not inherit classic recommendations. |
 | Premium v2 dependencies | Key Vault 443, without imposing classic control-plane requirements |
 | DNS | Custom resolver UDP/TCP 53 NSG checks; actual resolution, forwarding and internal gateway DNS remain unknown |
 | Routes | Default UDR/forced-tunnel investigation and classic management return-path guidance; not effective-route proof |
@@ -107,3 +139,5 @@ pwsh -NoProfile -File .\support-domains\api-management\tools\vnet-check\tests\Te
 ```
 
 The tests are deterministic and make zero Azure calls. Live acceptance remains outstanding: compare known-good classic and Premium v2 services against AppLens/MCP under equivalent permissions, then reproduce selected misconfigurations only in a separately approved disposable environment. Do not inject faults or create resources as part of this checker.
+
+To retain a synthetic HTML demonstration generated by the actual evaluator and renderer, run the assessment test suite with `-KeepSampleReport`. Its final output supplies `SyntheticSampleHtml`; the report is labeled offline and is not a live diagnosis.

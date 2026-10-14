@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "candidate",
   "valueProof": "unproven",
   "reviewedAt": "2026-10-14",
@@ -12,6 +12,20 @@
     "premiumV2": "https://learn.microsoft.com/azure/api-management/inject-vnet-v2",
     "networkStatus": "https://learn.microsoft.com/rest/api/apimanagement/network-status/list-by-service?view=rest-apimanagement-2024-05-01"
   },
+  "sections": [
+    { "id": "discovery", "title": "Service and network model", "pattern": "^network-model$", "coverage": "Automated discovery", "source": "premiumV2", "nextStep": "Confirm the discovered SKU and injection mode match the intended topology." },
+    { "id": "subnet", "title": "Subnet, placement and capacity", "pattern": "^(region-placement|subscription-placement|delegation|subnet-|free-address-capacity)", "coverage": "Partial: actual free IPs, dedicated occupancy and upgrade headroom require corroboration", "source": "classicSubnet", "nextStep": "Compare subnet placement, delegation and capacity with the SKU-specific requirements; verify allocation and upgrade headroom separately." },
+    { "id": "nsg", "title": "NSG rules", "pattern": "^nsg-", "coverage": "Ordered rule evaluation; unresolved service-tag or ASG overlap remains unknown", "source": "classicNetwork", "nextStep": "Inspect the identified rule priority and required flow. Do not add a rule until earlier matches and intended policy are understood." },
+    { "id": "service-endpoints", "title": "Service endpoints", "pattern": "^service-endpoint-", "coverage": "Classic recommendations checked; firewall alternatives and feature applicability need evidence", "source": "classicRouting", "nextStep": "For classic forced tunneling, verify the recommended endpoint or a documented working firewall route. Absence alone is not a fault." },
+    { "id": "routing", "title": "Routes and forced tunneling", "pattern": "^(effective-routing|management-return-path)$", "coverage": "Partial: UDR observations are not effective BGP, peering or firewall evidence", "source": "classicRouting", "nextStep": "Verify effective routes and return paths, then correlate firewall or appliance evidence without changing configuration." },
+    { "id": "dns", "title": "DNS and name resolution", "pattern": "^(custom-dns-|dns-)", "coverage": "Resolver port checks; actual answers, forwarding and private DNS zones are not tested", "source": "internalDns", "nextStep": "Validate exact gateway/backend/dependency hostname resolution from the relevant network. Do not use workstation DNS as APIM evidence." },
+    { "id": "native-status", "title": "Native dependency connectivity", "pattern": "^native-", "coverage": "Runtime availability, freshness and optionality checked", "source": "networkStatus", "nextStep": "Correlate fresh required dependency failures with NSG, routing and DNS evidence; an observation is not a proven cause." },
+    { "id": "tls", "title": "TLS and certificates", "pattern": "^tls-", "coverage": "Manual evidence required: chains, revocation, custom domains and SNI", "source": "classicNetwork", "nextStep": "Verify certificate chains, expiry, SNI and CRL/OCSP reachability using separately approved target-specific evidence." },
+    { "id": "backends", "title": "Client and backend traffic", "pattern": "^backend-and-client-path$", "coverage": "Not actively probed: ingress, backend TLS, policies and authentication", "source": "classicNetwork", "nextStep": "Use scoped gateway/backend telemetry or separately approved traffic probes; do not send customer requests automatically." },
+    { "id": "optional-features", "title": "Optional feature dependencies", "pattern": "^conditional-dependencies$", "coverage": "Feature use is not inferred; cache, counters, Event Hubs, Entra and Traffic Manager need evidence", "source": "classicNetwork", "nextStep": "Establish which features are enabled before assessing their extra ports and destinations." },
+    { "id": "infrastructure-egress", "title": "Infrastructure and FQDN egress", "pattern": "^infrastructure-egress$", "coverage": "Manual evidence required: NTP, internal PKI, diagnostics and platform FQDNs", "source": "classicNetwork", "nextStep": "Review the SKU-specific platform egress requirements and obtain firewall or platform connectivity evidence." },
+    { "id": "evidence", "title": "Evidence quality and collection", "pattern": ".*", "coverage": "Collection gaps, freshness and location coverage are explicit", "source": "networkStatus", "nextStep": "Resolve denied reads, missing locations and stale captures before drawing conclusions." }
+  ],
   "flows": [
     { "id": "management", "family": "classic", "direction": "Inbound", "source": "ApiManagement", "destination": "VirtualNetwork", "ports": [3443], "protocol": "Tcp", "purpose": "Classic management endpoint" },
     { "id": "https-ingress", "family": "classic", "mode": "External", "direction": "Inbound", "source": "Internet", "destination": "VirtualNetwork", "ports": [443], "protocol": "Tcp", "purpose": "External HTTPS gateway ingress" },

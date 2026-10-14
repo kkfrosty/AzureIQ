@@ -99,6 +99,15 @@ try {
     Check ($state.Writes -eq 0) 'Only account show and ARM GET commands are issued'
     Check ($snapshot.regions.Count -eq 1 -and $null -ne $snapshot.regions[0].routeTable) 'Subnet references are followed for route evidence'
     Check ($snapshot.nativeNetworkStatus.locations.Count -eq 2) 'Native status bare-array response is preserved'
+    $assessment = Invoke-ApimVnetAssessment $snapshot
+    $overview = Get-ApimVnetTargetOverview -Snapshot $snapshot -Report $assessment -IncludePrivateDetails
+    Check ($overview.serviceName -eq 'example' -and $overview.resourceGroup -eq 'example' -and $overview.skuName -eq 'Premium' -and $overview.capacity -eq 1) 'Collector responses identify the real target and SKU in the private projection'
+    Check ($overview.regions[0].vnetName -eq 'example' -and $overview.regions[0].subnetName -eq 'apim' -and $overview.regions[0].subnetPrefixes[0] -eq '10.0.0.0/24') 'Referenced VNet/subnet metadata is available for the operator overview'
+    $service = $responses[(Get-ApimReadUri $serviceId $subscription)]
+    $service.properties.additionalLocations = @(@{ location = 'eastus'; sku = @{ name = 'Premium'; capacity = 2 }; virtualNetworkConfiguration = @{ subnetResourceId = $subnetId } })
+    $multiRegion = Get-ApimVnetSnapshot -WorkspaceRoot $fixtureRoot -ServiceName example -ResourceGroup example
+    Check ($multiRegion.regions.Count -eq 2 -and $multiRegion.regions[1].capacity -eq 2) 'Additional-location capacity is read from ARM sku.capacity'
+    $service.properties.additionalLocations = @()
     $state.FailedUri = Get-ApimReadUri "$serviceId/networkstatus" $subscription
     $state.Failure = 'UNSUPPORTED_OR_BAD_REQUEST'
     $snapshot = Get-ApimVnetSnapshot -WorkspaceRoot $fixtureRoot -ServiceName example -ResourceGroup example

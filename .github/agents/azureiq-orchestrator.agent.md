@@ -44,6 +44,8 @@ Load relevant AzureIQ skills and the matching support domain automatically. A re
 9. For an AzureIQ CLI route, run `operations list`, require an exact registered operation, and pass explicit parameters from the approved action manifest. If no operation exists, do not execute an ad hoc shell command; use a validated candidate package and fixed execution lane or stop for a safe engine gap.
 10. If no overlay matches, use the best live MCP/extension tool normally. Do not invent a local capability merely because it is absent from the registry.
 
+Registered standalone read-only diagnostics are distinct from shared-host mutation operations. For APIM VNet checks and HTML reports, follow [the fixed checker workflow](../../support-domains/api-management/tools/vnet-check/COPILOT.md), use its `-Describe` contract, run every applicable section, and analyze the resulting JSON while linking the HTML. Invoke the fixed command in the active agent when a specialist lacks terminal access; do not broaden specialist permissions. Candidate status, exact scope checks, no mutations and explicit unknowns still apply.
+
 ## Required Behavior
 
 1. Read `config/azureiq.yaml`, merge the optional ignored `config/local.azureiq.json`, and classify the request using the effective mode and scope.

@@ -32,6 +32,14 @@ dotnet run --project ./src/AzureIQ.Execution --configuration Release --no-restor
 
 GitHub Copilot discovers this command through the always-on instructions and change-control skill, then passes explicit parameters through the terminal tool. The output is JSON so the agent can validate it without parsing prose.
 
+## Standalone Read-Only Diagnostics
+
+The [APIM VNet checker](../support-domains/api-management/tools/vnet-check/COPILOT.md) is a registered support-domain diagnostic, not a mutation operation in `AzureIQ.Execution`. Its `-Describe` command supplies its own parameter, section, output and exit-code contract. The active agent can invoke this fixed read-only workflow for a user-requested assessment and pass sanitized reports to a restricted specialist.
+
+Its live operator report starts with the discovered SKU and named APIM/VNet/subnet context. Detailed operator HTML/JSON is stored outside the repository in the user's local application-data AzureIQ reports folder; sanitized analysis and audit artifacts remain in ignored run storage. Offline previews are explicitly not live evidence. See the checker workflow for the privacy boundary and returned paths.
+
+This is not permission to run arbitrary generated scripts with credentials. Its collector is bounded to allowlisted GETs, verifies private scope/principal before each resource read, and never generates application traffic. It remains candidate until live comparison; metadata discovery and offline fixtures require no Azure credentials. Shared-host mutation admission and approval requirements are unchanged.
+
 ## Authentication And Private Scope
 
 - Local execution uses the existing VS Code Azure credential and broker integration.

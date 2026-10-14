@@ -6,7 +6,7 @@ Reviewed 2026-10-14 using current Microsoft documentation. These are versioned r
 | --- | --- | --- |
 | [Injection network resources](https://learn.microsoft.com/azure/api-management/virtual-network-injection-resources) | Classic Developer/Premium | Same region/subscription, /29 minimum, no delegation, attached NSG, per-location evaluation. Classic unit address arithmetic checked; actual free capacity unknown. |
 | [Classic VNet configuration reference](https://learn.microsoft.com/azure/api-management/virtual-network-reference) | Classic only | Required dependency NSG ports and regional Storage/SQL tags. Developer load-balancer exception takes precedence over applying the Premium probe requirement blindly. |
-| [External VNet routing](https://learn.microsoft.com/azure/api-management/api-management-using-with-vnet#routing) | Classic external/internal routing guidance | Default UDR investigation, ApiManagement-to-Internet management return path and service endpoint recommendations. Firewall/BGP/effective routes are not proven. |
+| [External VNet routing](https://learn.microsoft.com/azure/api-management/api-management-using-with-vnet#routing) | Classic external/internal routing guidance | Default UDR investigation, management return path and Storage/SQL/Event Hubs/Key Vault endpoint configuration/provisioning. SQL endpoint recommendation is primary-region only; missing endpoints are not faults because firewall alternatives exist. |
 | [Internal VNet DNS](https://learn.microsoft.com/azure/api-management/api-management-using-with-internal-vnet#dns-configuration) | Classic internal | Custom/private DNS is necessary; configuration does not prove resolution. No workstation DNS result is presented as APIM evidence. |
 | [Premium v2 injection](https://learn.microsoft.com/azure/api-management/inject-vnet-v2) | Premium v2 only | Dedicated subnet, /27 minimum, /24 recommendation, hostingEnvironments delegation, NSG and Key Vault 443, private inbound DNS. Dedicated occupancy and actual DNS resolution remain unknown. |
 | [Network status REST API](https://learn.microsoft.com/rest/api/apimanagement/network-status/list-by-service?view=rest-apimanagement-2024-05-01) | Availability discovered at runtime | GET returns a bare array of locations, each with `networkStatus.connectivityStatus`; freshness and `isOptional` matter. Missing/unsupported API is unknown, especially for v2, not a fallback to classic assumptions. |
@@ -19,7 +19,10 @@ Reviewed 2026-10-14 using current Microsoft documentation. These are versioned r
 - HTTP ingress on 80 depends on intended client access; this version checks external HTTPS 443 and does not require HTTP as a universal healthy-service condition.
 - Absence of service endpoints does not alone establish a fault: the routing guidance describes firewall-based alternatives. Effective reachability is unknown until corroborated.
 - Native dependency failures are evidence of a failing dependency path, not proof of which NSG, route, DNS server or firewall caused it.
+- Current classic internal DNS guidance warns against an authoritative zone for the apex `azure-api.net`; scope records/zones to the instance's exact endpoint hostnames. This version does not discover DNS zone ownership and reports DNS resolution as unknown.
 
 ## Coverage still requiring evidence
 
 Private DNS zone/record/link discovery, effective route/BGP and peering analysis, firewall policy/flow logs, TLS/SNI and custom certificates, backend policies and authentication, optional feature dependencies and safe client/backend probes are separate follow-on capabilities. Required NTP and FQDN-based infrastructure egress are explicitly unevaluated; the initial NSG matrix is not exhaustive.
+
+Version 0.2 exposes every area as an HTML/JSON section with coverage notes, expected/observed findings, next evidence needed and documentation links. This coverage inventory is not a claim that all documentation requirements are automatically tested.

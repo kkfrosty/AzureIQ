@@ -13,6 +13,7 @@ AzureIQ's intended operational state is supervised management of the configured 
 - Load matching AzureIQ skills and support domains by task relevance. Use several routes in sequence when needed: discover or diagnose, plan, approve, execute, then verify.
 - If subagent invocation is unavailable, apply the same role workflow directly and disclose the loss of tool isolation. Do not ask the user to choose another agent.
 - `AzureIQ Orchestrator` is the optional dedicated AzureIQ mode and follows this same routing contract.
+- For APIM VNet checks or networking report requests, automatically follow [the checker invocation workflow](../support-domains/api-management/tools/vnet-check/COPILOT.md). Run the registered read-only tool, analyze every JSON section, and link its HTML report; users need not know the command or select tests. Restricted specialists return execution to the active agent rather than gaining terminal permissions.
 
 ## Operating Contract
 
