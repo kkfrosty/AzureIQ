@@ -88,7 +88,7 @@ The MCP server should be a thin transport over the same operation implementation
 
 ## Next Architecture Proof
 
-Build the case study defined in [.azure/deployment-plan.md](../.azure/deployment-plan.md): web API on App Service, APIM gateway, and client application. Then use its approved failure scenarios to compare:
+Build the case study defined in the ignored local `.azure/deployment-plan.md`: web API on App Service, APIM gateway, and client application. Then use its approved failure scenarios to compare:
 
 1. raw Azure MCP/AppLens behavior;
 2. registry-directed corroboration;

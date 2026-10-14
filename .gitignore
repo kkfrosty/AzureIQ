@@ -8,7 +8,6 @@
 
 # Azure Developer CLI local environments and private scope
 .azure/*
-!.azure/deployment-plan.md
 
 # Local configuration and environment secrets
 .env

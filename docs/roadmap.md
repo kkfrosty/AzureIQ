@@ -2,7 +2,7 @@
 
 AzureIQ will be developed through one end-to-end application: a web API on App Service, API Management in front of it, and a client application that uses the API through APIM. The case study, not a speculative enterprise platform model, determines what AzureIQ keeps and generalizes.
 
-The deployment source of truth is [.azure/deployment-plan.md](../.azure/deployment-plan.md).
+Commissioned workspaces keep the deployment source of truth in the ignored local `.azure/deployment-plan.md` file so private scope and environment details are not published.
 
 ## Phase 0: Workspace Commissioning
 
