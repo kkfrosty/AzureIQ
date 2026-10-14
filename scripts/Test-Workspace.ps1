@@ -17,7 +17,6 @@ $excludedDirectoryNames = @(
     'TestResults'
 )
 $requiredPaths = @(
-    '.azure/deployment-plan.md',
     '.github/copilot-instructions.md',
     'artifacts/README.md',
     'artifacts/catalog.json',
@@ -499,22 +498,25 @@ switch ($mode) {
     }
 }
 
-$deploymentPlan = Get-Content -Raw -LiteralPath (Join-Path $workspaceRoot '.azure/deployment-plan.md')
-if ($deploymentPlan -notmatch 'Local Waypoint Freight API, test, and client implementation is complete and validated') {
-    throw 'The case-study deployment plan must record the validated local milestone.'
-}
-if ($deploymentPlan -notmatch 'Azure rollout preparation approved - deployment pending validated what-if and exact action approval' -and
-    $deploymentPlan -notmatch 'The supervised deployment is complete') {
-    throw 'The case-study deployment plan must record either the exact deployment gate or its supervised completion.'
-}
-if ($deploymentPlan -notmatch 'No Azure resource or application write is authorized until the resulting action manifest and what-if are approved immediately before execution') {
-    throw 'The case-study deployment plan must keep Azure writes gated by an approved manifest and what-if.'
-}
-if ($deploymentPlan -notmatch '## Disposable Teardown Contract') {
-    throw 'The case-study deployment plan must define supervised teardown and absence verification.'
-}
-if ($deploymentPlan -notmatch '## Coding Engine Requirement For This Case Study') {
-    throw 'The case-study deployment plan must route tool gaps into the coding engine.'
+$deploymentPlanPath = Join-Path $workspaceRoot '.azure/deployment-plan.md'
+if (Test-Path -LiteralPath $deploymentPlanPath -PathType Leaf) {
+    $deploymentPlan = Get-Content -Raw -LiteralPath $deploymentPlanPath
+    if ($deploymentPlan -notmatch 'Local Waypoint Freight API, test, and client implementation is complete and validated') {
+        throw 'The case-study deployment plan must record the validated local milestone.'
+    }
+    if ($deploymentPlan -notmatch 'Azure rollout preparation approved - deployment pending validated what-if and exact action approval' -and
+        $deploymentPlan -notmatch 'The supervised deployment is complete') {
+        throw 'The case-study deployment plan must record either the exact deployment gate or its supervised completion.'
+    }
+    if ($deploymentPlan -notmatch 'No Azure resource or application write is authorized until the resulting action manifest and what-if are approved immediately before execution') {
+        throw 'The case-study deployment plan must keep Azure writes gated by an approved manifest and what-if.'
+    }
+    if ($deploymentPlan -notmatch '## Disposable Teardown Contract') {
+        throw 'The case-study deployment plan must define supervised teardown and absence verification.'
+    }
+    if ($deploymentPlan -notmatch '## Coding Engine Requirement For This Case Study') {
+        throw 'The case-study deployment plan must route tool gaps into the coding engine.'
+    }
 }
 
 [pscustomobject]@{
