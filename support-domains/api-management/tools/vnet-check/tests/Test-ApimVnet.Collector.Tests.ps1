@@ -94,6 +94,9 @@ try {
             return $script:mockState.Responses[$uri]
         }
     } $state
+    $preflight = Test-ApimVnetReader -WorkspaceRoot $fixtureRoot
+    Check ($preflight.status -eq 'Ready' -and $state.ResourceReads -eq 0 -and $state.AccountChecks -eq 1) 'Authentication preflight validates scope without Azure resource reads'
+    $state.AccountChecks = 0
     $snapshot = Get-ApimVnetSnapshot -WorkspaceRoot $fixtureRoot -ServiceName example -ResourceGroup example
     Check ($state.ResourceReads -eq 6 -and $state.AccountChecks -eq 7) 'Every resource read is preceded by an exact context check'
     Check ($state.Writes -eq 0) 'Only account show and ARM GET commands are issued'
@@ -104,6 +107,9 @@ try {
     Check ($overview.serviceName -eq 'example' -and $overview.resourceGroup -eq 'example' -and $overview.skuName -eq 'Premium' -and $overview.capacity -eq 1) 'Collector responses identify the real target and SKU in the private projection'
     Check ($overview.regions[0].vnetName -eq 'example' -and $overview.regions[0].subnetName -eq 'apim' -and $overview.regions[0].subnetPrefixes[0] -eq '10.0.0.0/24') 'Referenced VNet/subnet metadata is available for the operator overview'
     $service = $responses[(Get-ApimReadUri $serviceId $subscription)]
+    $service.properties.additionalLocations = $null
+    $singleRegion = Get-ApimVnetSnapshot -WorkspaceRoot $fixtureRoot -ServiceName example -ResourceGroup example
+    Check ($singleRegion.regions.Count -eq 1) 'Null additionalLocations preserves the single primary region'
     $service.properties.additionalLocations = @(@{ location = 'eastus'; sku = @{ name = 'Premium'; capacity = 2 }; virtualNetworkConfiguration = @{ subnetResourceId = $subnetId } })
     $multiRegion = Get-ApimVnetSnapshot -WorkspaceRoot $fixtureRoot -ServiceName example -ResourceGroup example
     Check ($multiRegion.regions.Count -eq 2 -and $multiRegion.regions[1].capacity -eq 2) 'Additional-location capacity is read from ARM sku.capacity'
@@ -139,12 +145,12 @@ try {
             function script:Get-Command {
                 [CmdletBinding()]
                 param([string]$Name, [string]$CommandType)
-                return @{ Source = $script:fakeCliPath }
+                return @(@{ Source = $script:fakeCliPath }, @{ Source = 'non-executable-companion' })
             }
         } $fakeCliPath
         "@echo off`necho {`"ok`":true}`n" | Set-Content -LiteralPath $fakeCliPath -Encoding ascii
         $response = & $module { Invoke-ReaderCli @('account', 'show') }
-        Check ($response.ok -eq $true) 'Windows cmd wrapper executes a spaced-path CLI without Azure access'
+        Check ($response.ok -eq $true) 'Windows cmd wrapper selects the first CLI match and executes a spaced path without Azure access'
         "@echo off`necho AuthorizationFailed private-detail 1>&2`nexit /b 1`n" | Set-Content -LiteralPath $fakeCliPath -Encoding ascii
         $errorCategory = $null
         try { & $module { Invoke-ReaderCli @('account', 'show') } | Out-Null } catch { $errorCategory = $_.Exception.Message }

@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 function Invoke-ReaderCli {
     param([string[]]$Arguments)
     # Azure CLI diagnostics can contain private identifiers; only fixed error categories leave this boundary.
-    $command = Get-Command az -CommandType Application -ErrorAction Stop
+    $command = Get-Command az -CommandType Application -ErrorAction Stop | Select-Object -First 1
     $allArguments = @($Arguments) + @('--only-show-errors', '--output', 'json')
     $start = [System.Diagnostics.ProcessStartInfo]::new()
     $start.UseShellExecute = $false
@@ -97,13 +97,8 @@ function Get-ApimReadUri {
     return "https://management.azure.com${ResourceId}?api-version=$version"
 }
 
-function Get-ApimVnetSnapshot {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$WorkspaceRoot,
-        [Parameter(Mandatory)][ValidatePattern('^[A-Za-z0-9-]{1,50}$')][string]$ServiceName,
-        [Parameter(Mandatory)][ValidatePattern('^[A-Za-z0-9_.()-]{1,90}$')][string]$ResourceGroup
-    )
+function Get-ApimReaderProfile {
+    param([Parameter(Mandatory)][string]$WorkspaceRoot)
     if (-not (Get-Command az -ErrorAction SilentlyContinue)) { throw 'AZURE_CLI_REQUIRED' }
     $tracked = Get-Content -Raw -LiteralPath (Join-Path $WorkspaceRoot 'config\azureiq.yaml')
     if ($tracked -notmatch '(?m)^schemaVersion:\s*1\s*$' -or $tracked -notmatch 'requireExactScope:\s*true') {
@@ -116,6 +111,29 @@ function Get-ApimVnetSnapshot {
     if (-not $configuration.ContainsKey('schemaVersion') -or $configuration.schemaVersion -ne 1) {
         throw 'UNSUPPORTED_PRIVATE_PROFILE'
     }
+    $account = Invoke-ReaderCli @('account', 'show')
+    Assert-ApimReaderContext $configuration $account
+    return @{ configuration = $configuration; configurationText = $configurationText; configurationPath = $configurationPath; tracked = $tracked }
+}
+
+function Test-ApimVnetReader {
+    param([Parameter(Mandatory)][string]$WorkspaceRoot)
+    $null = Get-ApimReaderProfile -WorkspaceRoot $WorkspaceRoot
+    return @{ status = 'Ready'; resourceReads = 0; mutatesAzure = $false; changesAuthentication = $false }
+}
+
+function Get-ApimVnetSnapshot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$WorkspaceRoot,
+        [Parameter(Mandatory)][ValidatePattern('^[A-Za-z0-9-]{1,50}$')][string]$ServiceName,
+        [Parameter(Mandatory)][ValidatePattern('^[A-Za-z0-9_.()-]{1,90}$')][string]$ResourceGroup
+    )
+    $profile = Get-ApimReaderProfile -WorkspaceRoot $WorkspaceRoot
+    $configuration = $profile.configuration
+    $configurationText = $profile.configurationText
+    $configurationPath = $profile.configurationPath
+    $tracked = $profile.tracked
     function Read-Resource {
         param([string]$Id)
         if ((Get-Content -Raw -LiteralPath $configurationPath) -cne $configurationText -or
@@ -127,8 +145,6 @@ function Get-ApimVnetSnapshot {
         $uri = Get-ApimReadUri $Id $configuration.scope.subscriptionIds[0]
         return Invoke-ReaderCli @('rest', '--method', 'get', '--url', $uri, '--subscription', $configuration.scope.subscriptionIds[0])
     }
-    $account = Invoke-ReaderCli @('account', 'show')
-    Assert-ApimReaderContext $configuration $account
     $id = "/subscriptions/$($configuration.scope.subscriptionIds[0])/resourceGroups/$ResourceGroup/providers/Microsoft.ApiManagement/service/$ServiceName"
     $service = Read-Resource $id
     if (-not $service.ContainsKey('properties') -or -not $service.ContainsKey('sku')) { throw 'INVALID_SERVICE_RESPONSE' }
@@ -136,7 +152,7 @@ function Get-ApimVnetSnapshot {
         location = $service.location; capacity = $service.sku.capacity
         virtualNetworkConfiguration = $service.properties['virtualNetworkConfiguration']
     })
-    if ($service.properties.ContainsKey('additionalLocations')) { $locations += @($service.properties.additionalLocations) }
+    if ($null -ne $service.properties['additionalLocations']) { $locations += @($service.properties.additionalLocations) }
     if ($locations.Count -gt 10) { throw 'LOCATION_LIMIT_EXCEEDED' }
     $regions = [System.Collections.Generic.List[object]]::new()
     foreach ($location in $locations) {
@@ -193,4 +209,4 @@ function Get-ApimVnetSnapshot {
     }
 }
 
-Export-ModuleMember -Function Get-ApimVnetSnapshot, Assert-ApimReaderContext, Get-ApimReadUri
+Export-ModuleMember -Function Get-ApimVnetSnapshot, Test-ApimVnetReader, Assert-ApimReaderContext, Get-ApimReadUri

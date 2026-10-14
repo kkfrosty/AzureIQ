@@ -169,7 +169,60 @@ $snapshot.regions[0].networkSecurityGroup.properties.securityRules = @(
     (New-Rule -Access Deny -Destination '10.0.1.0/24' -Port '53'), (New-Rule -Priority 200), (New-Rule -Direction Inbound))
 Assert-True ((Finding (Assess $snapshot) 'custom-dns-Udp')[0].status -eq 'Fail') 'CIDR rule can definitively block custom resolver'
 $snapshot.regions[0].routeTable = @{ properties = @{ routes = @(@{ properties = @{ addressPrefix = '0.0.0.0/0'; nextHopType = 'VirtualAppliance' } }) } }
-Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].status -eq 'Unknown') 'Forced tunnel is investigation trigger, not false failure'
+Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].status -eq 'Fail') 'Forced tunnel without management return route is a required safeguard gap, not an asserted outage'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Fail') 'Forced tunnel requires the Storage endpoint safeguard or a verified alternative'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Sql')[0].status -eq 'Fail') 'Forced tunnel requires the primary SQL endpoint safeguard or a verified alternative'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.KeyVault')[0].status -eq 'Fail') 'Forced tunnel requires the Key Vault endpoint safeguard or a verified alternative'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.EventHub')[0].status -eq 'Unknown') 'Unused or unknown Event Hubs is not declared a required failure'
+$snapshot.regions[0].routeTable.properties.routes += @{ properties = @{ addressPrefix = 'ApiManagement'; nextHopType = 'Internet'; provisioningState = 'Succeeded' } }
+Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].status -eq 'Pass') 'Global ApiManagement Internet UDR meets configured return-path safeguard'
+$snapshot.regions[0].routeTable.properties.routes[1].properties.nextHopType = 'VirtualAppliance'
+Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].status -eq 'Fail') 'ApiManagement route through the appliance does not protect return traffic'
+$snapshot.regions[0].routeTable.properties.routes[1].properties.addressPrefix = 'ApiManagement.EastUS'
+Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].status -eq 'Unknown') 'Regional service-tag coverage is not assumed complete'
+$snapshot.regions[0].routeTable.properties.routes = @(@{ properties = @{ addressPrefix = '0.0.0.0/0'; nextHopType = 'Internet' } })
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Unknown') 'Internet default route is not forced tunneling'
+Assert-True ((Finding (Assess $snapshot) 'effective-routing')[0].observed -match 'not forced tunneling') 'Default route next hop is explained'
+$snapshot.regions[0].routeTable.properties.routes[0].properties.nextHopType = 'None'
+Assert-True ((Finding (Assess $snapshot) 'effective-routing')[0].status -eq 'Fail') 'Discard default UDR is an explicit configuration issue'
+Assert-True ((Finding (Assess $snapshot) 'effective-routing')[0].observed -match 'changed or removed') 'Discard-route finding preserves independent durable safeguard recommendations'
+$snapshot.regions[0].routeTable.properties.routes[0].properties.nextHopType = 'VirtualNetworkGateway'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Fail') 'Gateway default route also triggers forced-tunnel safeguards'
+$snapshot = New-Snapshot -Sku PremiumV2
+$snapshot.regions[0].routeTable = @{ properties = @{ routes = @(@{ properties = @{ addressPrefix = '0.0.0.0/0'; nextHopType = 'VirtualAppliance' } }) } }
+Assert-True ((Finding (Assess $snapshot) 'management-return-path').Count -eq 0) 'Classic service-tag return route is not imposed on Premium v2'
+$snapshot = New-Snapshot
+$snapshot.regions[0].subnet.properties.routeTable = @{ id = 'unavailable-route' }
+$snapshot.regions[0].evidenceGaps = @('NETWORK_RULE_ACCESS_DENIED')
+Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].observed -match 'could not be read') 'Unreadable route table is not falsely reported as a missing route'
+$snapshot = New-Snapshot
+$snapshot.nativeNetworkStatus.locations[0].networkStatus.connectivityStatus[0].resourceType = 'BlobStorage'
+$snapshot.nativeNetworkStatus.locations[0].networkStatus.connectivityStatus[0].lastUpdated = $now.UtcDateTime.ToLocalTime()
+$snapshot.capturedAt = $now.UtcDateTime.ToLocalTime()
+$dateReport = Assess $snapshot
+Assert-True ((Finding $dateReport 'native-dependency-1')[0].status -eq 'Pass' -and (Finding $dateReport 'native-dependency-1')[0].evidenceTimestamp -eq $now.ToString('o')) 'JSON-converted DateTime retains the original UTC instant'
+Assert-True ((Finding $dateReport 'native-dependency-1')[0].title -eq 'Azure Blob Storage' -and (Finding $dateReport 'native-dependency-1')[0].dependencyEvidence.observedStatus -eq 'success') 'Native dependency name and structured status are readable without hostnames'
+Assert-True ((Finding $dateReport 'native-dependency-1')[0].dependencyEvidence.source -match 'GET /networkstatus.*2024-05-01') 'Platform observation identifies the API that supplied it'
+$snapshot.nativeNetworkStatus.locations[0].networkStatus.connectivityStatus[0].lastUpdated = $now.AddMinutes(-31)
+$stale = (Finding (Assess $snapshot) 'native-dependency-1')[0]
+Assert-True ($stale.assessment -eq 'Stale evidence' -and $stale.dependencyEvidence.observedStatus -eq 'success' -and -not $stale.dependencyEvidence.fresh) 'Stale success remains an explicit historical observation, not a current pass'
+$snapshot = New-Snapshot
+$snapshot.nativeNetworkStatus.locations[0].networkStatus.connectivityStatus[0].resourceType = 'ApiManagement Control Plane - inbound'
+$snapshot.nativeNetworkStatus.locations[0].networkStatus.connectivityStatus[0].status = 'failure'
+$snapshot.nativeNetworkStatus.locations[0].networkStatus.connectivityStatus[0].lastStatusChange = $now.AddMinutes(-10)
+$inbound = (Finding (Assess $snapshot) 'native-dependency-1')[0]
+Assert-True ($inbound.title -eq 'APIM management endpoint - inbound connectivity' -and $inbound.assessment -eq 'Issue' -and $inbound.dependencyEvidence.errorAvailable) 'Required inbound failure has an understandable name and explicit error availability'
+Assert-True ($inbound.nextStep -match 'Network status.*expand' -and $inbound.dependencyEvidence.lastStatusChange -eq $now.AddMinutes(-10).ToString('o')) 'Dependency row explains where to inspect errors and preserves last status change'
+$snapshot = New-Snapshot
+$snapshot.regions[0].networkSecurityGroup.properties.securityRules = @(
+    (New-Rule -Priority 100 -Destination '10.0.0.0/24'), (New-Rule -Priority 200 -Destination 'AzureKeyVault' -Port 443), (New-Rule -Direction Inbound))
+$snapshot.regions[0].networkSecurityGroup.properties.securityRules[1].properties.sourceAddressPrefix = '10.0.0.0/24'
+Assert-True ((Finding (Assess $snapshot) 'nsg-key-vault-AzureKeyVault-443')[0].status -eq 'Pass') 'Collected APIM subnet CIDR and consistent earlier allows establish an NSG permit'
+$snapshot.regions[0].networkSecurityGroup.properties.securityRules[0].properties.access = 'Deny'
+Assert-True ((Finding (Assess $snapshot) 'nsg-key-vault-AzureKeyVault-443')[0].status -eq 'Unknown') 'Possible earlier deny still requires service-tag evidence'
+$snapshot.regions[0].networkSecurityGroup.properties.securityRules[0].properties.access = 'Allow'
+$snapshot.regions[0].networkSecurityGroup.properties.securityRules[1].properties.sourceAddressPrefix = '10.0.0.0/25'
+Assert-True ((Finding (Assess $snapshot) 'nsg-key-vault-AzureKeyVault-443')[0].status -eq 'Unknown') 'A permit covering only part of the APIM subnet does not establish full coverage'
 $json = $classic | ConvertTo-Json -Depth 30
 Assert-True ($json -notmatch 'private-hostname|private raw detail|00000000-|10\.0\.0') 'Report excludes raw hostnames, IDs, IPs and errors'
 $snapshot = New-Snapshot
@@ -201,6 +254,7 @@ $report = Assess $snapshot
 Assert-True ((Finding $report 'service-endpoint-Microsoft.Storage')[0].status -eq 'Pass') 'Configured successful service endpoint is checked'
 Assert-True ((Finding $report 'service-endpoint-Microsoft.Sql')[0].status -eq 'Fail') 'Failed endpoint provisioning is reported'
 Assert-True ((Finding $report 'service-endpoint-Microsoft.KeyVault')[0].status -eq 'Unknown') 'Missing endpoint is not a false fault'
+Assert-True ((Finding $report 'service-endpoint-Microsoft.KeyVault')[0].expected -match 'from the start.*later default-route' -and (Finding $report 'service-endpoint-Microsoft.KeyVault')[0].observed -match 'NOT CONFIGURED') 'Missing endpoints identify the service and preventive recommendation without requiring forced tunneling'
 Assert-True ((Finding $report 'service-endpoint-Microsoft.EventHub')[0].nextStep -match 'whether Event Hubs is used') 'Optional feature usage is established before requiring endpoints'
 Assert-True ((Finding $v2 'service-endpoint-classic-guidance')[0].status -eq 'NotApplicable') 'Premium v2 does not inherit classic endpoint requirements'
 $secondRegion = ($snapshot.regions[0] | ConvertTo-Json -Depth 100 | ConvertFrom-Json -AsHashtable)
@@ -211,7 +265,20 @@ $snapshot.service.properties.additionalLocations = @(@{ location = 'westus' })
 $report = Assess $snapshot
 Assert-True (@(Finding $report 'service-endpoint-Microsoft.Sql' | ForEach-Object { $_ } | Where-Object { $_.regionIndex -eq 2 -and $_.status -eq 'NotApplicable' }).Count -eq 1) 'Secondary region SQL endpoint requirement is not imposed'
 $html = ConvertTo-ApimVnetHtml $report
-Assert-True ($html.IndexOf('Assessment target and network overview') -lt $html.IndexOf('1. Problem Definition') -and $html -match 'Primary capacity / units') 'Target and SKU context precedes diagnostic findings'
+Assert-True ($html.IndexOf('Actual APIM and VNet configuration') -lt $html.IndexOf('1. Problem Definition') -and $html -match 'Primary capacity / units') 'Actual target and SKU context precedes findings'
+Assert-True (@($report.findings | Where-Object { -not $_.title -or -not $_.assessment }).Count -eq 0) 'Every finding has a customer-facing title and specific evidence state'
+Assert-True (@($report.findings | Where-Object { -not $_.expected -or $_.expected -match 'Meet the applicable SKU-specific requirement' }).Count -eq 0) 'Every check states specific criteria instead of a generic documentation fallback'
+Assert-True ((Finding $classic 'subnet-size')[0].expected -match '/29' -and (Finding $v2 'subnet-size')[0].expected -match '/27') 'Subnet requirements state the actual SKU minimum'
+Assert-True ((Finding $classic 'region-placement')[0].expected -match 'same Azure region') 'Placement check states the concrete matching requirement'
+Assert-True ($inbound.expected -match 'APIM management endpoint.*required platform dependency.*30 minutes') 'Required platform check states the actual dependency and freshness requirement'
+Assert-True ($report.assessmentSummary.Count -ge 4 -and @($report.assessmentSummary | Where-Object { [string]::IsNullOrWhiteSpace($_.label) }).Count -eq 0) 'Summary groups ordered findings into named evidence states, never an unlabeled total'
+Assert-True (($report.assessmentSummary | Measure-Object count -Sum).Sum -eq $report.findings.Count) 'Customer evidence state counts account for every finding exactly once'
+Assert-True ((Finding $classic 'service-endpoint-Microsoft.KeyVault')[0].assessment -eq 'Recommendation' -and (Finding $classic 'dns-resolution')[0].assessment -eq 'Not tested') 'Known missing safeguards are distinct from untested paths'
+Assert-True ($html -notmatch '>Unknown<' -and $html -match 'Stale evidence' -and $html -match 'Not tested') 'Customer UI has specific outcomes rather than Unknown badges'
+Assert-True ($html -notmatch '<tr data-status="[^"]+" data-assessment="Not tested"' -and $html -notmatch 'id="(tls|backends|optional-features|infrastructure-egress)"') 'Unimplemented checks are not published as action-table findings or standalone diagnostic sections'
+Assert-True ($html -match 'id="coverage-limits"' -and $html -match 'not an action list' -and $html -match 'before an HTTP request reaches APIM') 'A compact coverage disclosure preserves untested scope and the pre-HTTP TLS logging limit'
+Assert-True ((Finding $classic 'management-return-path')[0].expected -match 'Create a route table.*Associate.*peering.*Peering alone.*not every client/backend flow') 'Management recommendation names table creation/association and qualified future-route protection'
+Assert-True ($html -match 'Destination type</dt><dd>Service tag' -and $html -match 'Proposed management return route - not deployed' -and $html -match 'Why recommend it now') 'Route proposal shows concrete settings separately from observed configuration'
 Assert-True ($html -match 'OFFLINE / SNAPSHOT - NOT LIVE AZURE EVIDENCE') 'Snapshot preview is prominently distinguished from live evidence'
 $privateSnapshot = New-Snapshot
 $privateSnapshot.service.name = 'private-apim-example'
@@ -221,9 +288,11 @@ $privateSnapshot.regions[0].virtualNetwork.properties.addressSpace = @{ addressP
 $privateSnapshot.regions[0].virtualNetwork.properties.dhcpOptions.dnsServers = @('10.42.0.4')
 $privateAssessment = Assess $privateSnapshot
 $overview = Get-ApimVnetTargetOverview -Snapshot $privateSnapshot -Report $privateAssessment -IncludePrivateDetails
+Assert-True ($overview.regions[0].nsgRules.Count -eq 2 -and $overview.regions[0].nsgRules[0].destinationPorts[0] -eq '*') 'Private report contains structured NSG rule inventory'
 Assert-True ($overview.serviceName -eq 'private-apim-example' -and $overview.resourceGroup -eq 'private-group' -and $overview.regions[0].vnetName -eq 'private-vnet' -and $overview.regions[0].subnetName -eq 'apim') 'Private overview projects target and network names without full resource IDs'
 Assert-True ($overview.regions[0].vnetAddressSpaces[0] -eq '10.42.0.0/16' -and $overview.regions[0].dnsServers[0] -eq '10.42.0.4') 'Private overview retains approved network settings'
-Assert-True (($overview | ConvertTo-Json -Depth 30) -notmatch '00000000-|/subscriptions/|private-hostname|private raw detail') 'Private overview omits scope identifiers, native hostnames and raw errors'
+Assert-True ($overview.portalLink -eq 'https://portal.azure.com/#resource/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/private-group/providers/Microsoft.ApiManagement/service/private-apim-example/overview') 'Private overview has a direct Azure Portal service link'
+Assert-True (($overview | ConvertTo-Json -Depth 30) -notmatch 'private-hostname|private raw detail' -and $null -eq $overview['resourceId']) 'Private overview excludes raw errors and exposes identifiers only through approved portal links'
 Assert-True (($privateAssessment | ConvertTo-Json -Depth 30) -notmatch 'private-apim-example|private-group|private-vnet|10\.42\.|10\.0\.0\.0|/subscriptions/') 'Sanitized report is unchanged by private projection and does not retain target/address details'
 $missingSnapshot = New-Snapshot
 $missingSnapshot.regions[0].virtualNetwork = $null
@@ -242,8 +311,11 @@ $hostileReport.findings[0].observed = '<img src=x onerror="alert(1)">'
 $hostileReport.findings[0].source = 'javascript:alert(1)'
 $hostile = ConvertTo-ApimVnetHtml $hostileReport
 Assert-True ($hostile -notmatch '<img src=x' -and $hostile -match '&lt;img' -and $hostile -notmatch 'href="javascript:') 'Report text is encoded and unsafe links rejected'
+$hostileReport.targetOverview.portalLink = $overview.portalLink
+Assert-True ((ConvertTo-ApimVnetHtml $hostileReport) -notmatch 'href="https://portal.azure.com/#resource') 'Sanitized HTML cannot expose an injected resource-specific portal link'
 $contract = Get-ApimVnetToolContract
 Assert-True ($contract.sections.Count -eq 12 -and 'report.html' -in $contract.outputs -and -not $contract.mutatesAzure) 'Copilot contract describes all sections and read-only outputs'
+Assert-True ('-Preflight' -in $contract.preflightArguments) 'Contract exposes authentication preflight before resource discovery'
 Assert-Throws { Invoke-ApimVnetAssessment @{ schemaVersion = 2 } } 'Unsupported snapshot'
 
 $config = @{
@@ -281,16 +353,32 @@ try {
     $privateRunId = 'RUN-' + [guid]::NewGuid().ToString('N').ToUpperInvariant()
     $privateOutput = Write-ApimVnetOperatorReport -Snapshot $privateSnapshot -Report $privateAssessment -RunId $privateRunId -WorkspaceRoot $workspaceRoot
     $privateRunDirectory = Split-Path -Parent $privateOutput.Report
-    Assert-True (-not $privateRunDirectory.StartsWith($workspaceRoot, [StringComparison]::OrdinalIgnoreCase)) 'Detailed operator reports are persisted outside the repository'
+    Assert-True ($privateRunDirectory -eq (Join-Path $workspaceRoot ".azureiq\private-reports\api-management\vnet-check\$privateRunId")) 'Private operator reports use the standard service/tool workspace folder'
     $operatorJson = Get-Content -Raw -LiteralPath $privateOutput.Report | ConvertFrom-Json -AsHashtable
     $operatorHtml = Get-Content -Raw -LiteralPath $privateOutput.HtmlReport
     Assert-True ($operatorJson.targetOverview.privateDetails -and $operatorHtml -match 'private-apim-example' -and $operatorHtml -match 'private-vnet' -and $operatorHtml -match '10.42.0.0/16') 'Persisted operator report identifies its target and network'
-    Assert-True ($operatorHtml -match 'Do not commit or publish' -and $operatorHtml -match 'NOT LIVE AZURE EVIDENCE' -and $operatorHtml -notmatch '00000000-|/subscriptions/') 'Private report retains provenance and scope privacy boundaries'
-    Assert-Throws { Write-ApimVnetOperatorReport -Snapshot $privateSnapshot -Report $privateAssessment -RunId $privateRunId -WorkspaceRoot (Split-Path -Parent $privateRunDirectory) } 'PRIVATE_REPORT_INSIDE_WORKSPACE'
+    Assert-True ($operatorHtml -match 'NSG rule inventory' -and $operatorHtml -match 'User-defined routes' -and $operatorHtml -match 'approved Microsoft support channel' -and $operatorHtml -match 'Microsoft.Storage is NOT CONFIGURED') 'Private HTML includes support inventory and explicit missing endpoint recommendations'
+    Assert-True ($operatorHtml -match 'scoutTheme' -and $operatorHtml -match '--cp-bg: #f7f4ef' -and $operatorHtml -match 'data-theme="dark"') 'HTML includes light/dark theme detection and required variables'
+    Assert-True ($operatorHtml -match 'Do not commit or publish' -and $operatorHtml -match 'NOT LIVE AZURE EVIDENCE' -and $operatorHtml -match 'resource identifiers in Azure Portal links' -and $operatorHtml -notmatch 'private-hostname|private raw detail') 'Private report clearly discloses identifiers in approved links without raw errors'
+    Assert-True ($operatorHtml.IndexOf('Connected network / region') -lt $operatorHtml.IndexOf('NSG rule inventory') -and $operatorHtml -match 'Observed configuration, not recommendations') 'Actual network summary precedes collapsed technical inventory and recommendations'
+    Assert-True ($operatorHtml -match 'portal.azure.com/#resource' -and $operatorHtml -match 'Network status API' -and $operatorHtml -match 'expand the named dependency') 'Private report gives source provenance and supplementary portal error steps'
+    $connectionSection = [regex]::Match($operatorHtml, '(?s)<section class="panel network-status-panel" id="native-status".*?</section>').Value
+    Assert-True ($connectionSection -match 'data-connection-status="success"' -and $connectionSection -match 'Connected' -and $connectionSection -match 'Required' -and $connectionSection -match 'Observed at \(UTC\)') 'Collected successful network connections are shown directly in an unfiltered status table'
+    Assert-True ($connectionSection -notmatch 'data-status=' -and $connectionSection -match 'regardless of the configuration filters' -and $connectionSection -match 'portal is supplementary') 'Network connections are not hidden by configuration attention filters or replaced by portal instructions'
+    Assert-True ((Finding $privateAssessment 'native-dependency-1')[0].nextStep -match 'captured.*success.*no dependency-specific corrective action') 'A successful collected dependency check does not ask the user to check it again'
+    Assert-True ($operatorHtml -match 'Recommended durable network safeguards' -and $operatorHtml -match 'changed or removed' -and $operatorHtml -match 'Next hop type</dt><dd><code>Internet</code>' -and $operatorHtml -match '3443') 'Durable endpoint and management safeguards are visible independently of filtering and current default route'
+    Assert-True ($operatorHtml -notmatch 'class="copy-handoff"') 'Offline fixture report cannot offer a live Azure change handoff'
+    Assert-Throws { Write-ApimVnetOperatorReport -Snapshot $privateSnapshot -Report $privateAssessment -RunId $privateRunId -WorkspaceRoot $testDirectory } 'PRIVATE_REPORT_NOT_IGNORED'
     $operatorJson.targetOverview.serviceName = '<img src=x onerror="alert(1)">'
     $operatorJson.assessmentMode = 'Live'
     $operatorHtml = ConvertTo-ApimVnetHtml $operatorJson
     Assert-True ($operatorHtml -match '&lt;img' -and $operatorHtml -notmatch '<img src=x' -and $operatorHtml -match 'LIVE COLLECTION - real Azure configuration reads' -and $operatorHtml -notmatch 'OFFLINE / SNAPSHOT') 'Private target text is escaped and live provenance is distinct'
+    $endpointSection = [regex]::Match($operatorHtml, '(?s)<details class="check-section" id="service-endpoints".*?<div class="section-counts">').Value
+    Assert-True ($endpointSection -match 'private-vnet' -and $endpointSection -match 'Subnets &gt; apim &gt; Service endpoints' -and $endpointSection -match 'portal.azure.com/#resource') 'Endpoint section identifies its actual VNet/subnet and includes in-section portal editing navigation'
+    Assert-True ($endpointSection -match 'Copy request for GHC' -and $endpointSection -match 'Microsoft.Storage and Microsoft.KeyVault.*Microsoft.Sql' -and $endpointSection -match 'Preserve all existing endpoints') 'Endpoint handoff contains the scoped additive change request'
+    Assert-True ($endpointSection -match 'explicit approval' -and $endpointSection -match 'effective workspace safety mode' -and $endpointSection -match 'AzureIQ Verifier' -and $endpointSection -match 'HTML report cannot execute') 'GHC handoff preserves approval, execution authorization and independent verification'
+    $routingSection = [regex]::Match($operatorHtml, '(?s)<details class="check-section" id="routing".*?<div class="section-counts">').Value
+    Assert-True ($routingSection -match 'None attached' -and $routingSection -match 'table creation and subnet attachment as separate manifest operations') 'No attached route table is explicit and any creation/attachment needs its own approval'
     $snapshot = New-Snapshot
     $snapshot | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $fixturePath -Encoding utf8NoBOM
     $output = & pwsh -NoProfile -File (Join-Path $toolRoot 'Test-ApimVnet.ps1') -SnapshotPath $fixturePath

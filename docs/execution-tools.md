@@ -36,7 +36,27 @@ GitHub Copilot discovers this command through the always-on instructions and cha
 
 The [APIM VNet checker](../support-domains/api-management/tools/vnet-check/COPILOT.md) is a registered support-domain diagnostic, not a mutation operation in `AzureIQ.Execution`. Its `-Describe` command supplies its own parameter, section, output and exit-code contract. The active agent can invoke this fixed read-only workflow for a user-requested assessment and pass sanitized reports to a restricted specialist.
 
-Its live operator report starts with the discovered SKU and named APIM/VNet/subnet context. Detailed operator HTML/JSON is stored outside the repository in the user's local application-data AzureIQ reports folder; sanitized analysis and audit artifacts remain in ignored run storage. Offline previews are explicitly not live evidence. See the checker workflow for the privacy boundary and returned paths.
+Its live operator report starts with the discovered SKU and named APIM/VNet/subnet context. Detailed operator HTML/JSON uses the standard Git-ignored workspace folder `.azureiq/private-reports/api-management/vnet-check/RUN-.../`; sanitized analysis and audit artifacts remain in ignored run storage. Offline previews are explicitly not live evidence. See the checker workflow for the privacy boundary and returned paths.
+
+### Standard local private reports
+
+Use `.azureiq/private-reports/<azure-service>/<tool>/<run-id>/` for private
+diagnostic deliverables that users need to open in the trusted workspace.
+The entire private-report root is excluded by `.gitignore`. Tools must verify
+that exclusion before writing, reject reparse-point paths, and retain the
+sanitized audit/report boundary separately. Do not force-add or publish reports.
+Git ignore is not encryption and does not prevent unrelated backup/sync tools.
+Reports may contain reviewed operational metadata, never credentials or raw
+payloads. The APIM private operator report may include resource/subscription
+identifiers in validated Azure Portal links for approved customer navigation.
+Sanitized outputs never include those links; tenant/principal identifiers and
+raw native error text remain excluded from both boundaries.
+
+Private APIM endpoint/routing report sections can provide a copyable GHC
+change-plan request with the observed targets and desired settings. This is
+not an execution adapter, approval, or live command button. The user pastes
+the request into Copilot Chat; planning, exact approval, effective workspace
+authorization, supported execution and independent verification still apply.
 
 This is not permission to run arbitrary generated scripts with credentials. Its collector is bounded to allowlisted GETs, verifies private scope/principal before each resource read, and never generates application traffic. It remains candidate until live comparison; metadata discovery and offline fixtures require no Azure credentials. Shared-host mutation admission and approval requirements are unchanged.
 

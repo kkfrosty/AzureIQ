@@ -3,6 +3,7 @@
 .azureiq/evidence/raw/
 .azureiq/generated/
 .azureiq/plans/
+.azureiq/private-reports/
 .azureiq/runs/
 .azureiq/tmp/
 

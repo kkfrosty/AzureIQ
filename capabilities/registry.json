@@ -23,15 +23,15 @@
       "primary": {
         "kind": "support-domain",
         "selector": "support-domains/api-management/tools/vnet-check",
-        "operation": "Follow COPILOT.md; invoke Test-ApimVnet.ps1 -Describe, run all applicable sections, confirm targetOverview in sanitized report.json and link the returned HtmlReport; named live operator reports stay outside the repository"
+        "operation": "Follow COPILOT.md; immediately invoke Test-ApimVnet.ps1 -Describe and -Preflight, prompt for setup/missing target, start all applicable checks, confirm current version/targetOverview and link persisted private HtmlReport promptly; optional corroboration must not delay the checker"
       },
       "limitations": [
-        "The standalone checker is candidate and offline-tested only; no VNet live baseline comparison has been performed.",
+        "The standalone checker remains candidate; scoped classic live collection is exercised, but Premium v2 and controlled faulty-path baseline comparisons remain pending.",
         "The checker does not establish end-to-end traffic flow, and unsupported network models, unavailable reads and ambiguous NSG selectors remain unknown.",
         "Native network-status availability, especially on Premium v2, is discovered rather than assumed.",
         "The CLI collector requires a matching private Azure CLI principal, tenant and selected subscription and refuses cross-subscription references."
       ],
-      "requiredEvidence": ["discovered SKU and injection mode", "every service location's subnet, NSG and route configuration", "fresh native status when available", "separate client/backend traffic evidence for causal diagnosis"],
+      "requiredEvidence": ["verified reader preflight and requested private scope", "actual APIM and network context before recommendations", "every service location's subnet, NSG, endpoint and route configuration", "published findings backed by collected evidence; untested items are only coverage limits", "check-specific requirements with no generic documentation fallback", "section-local resource context and validated private portal links", "default UDR next hop and explicit classic management route-table/ApiManagement Internet route/subnet-association proposal", "qualified preventive rationale for future default routes or peering with gateway transit/BGP, not all APIM traffic", "named platform observations with source API, reported status, optionality and original UTC timestamps", "specific customer evidence states without relabeling stale or untested paths as passes", "scoped GHC planning handoffs distinguished from approval or execution", "persisted current-version support report with browser readability verified when available", "separate client/backend traffic evidence for causal diagnosis"],
       "fallback": {
         "kind": "mcp",
         "selector": "mcp_azure_mcp_ser_applens",

@@ -10,26 +10,27 @@
   "artifacts": [
     {
       "id": "apim.vnet-check",
-      "version": "0.2.0",
+      "version": "0.3.3",
       "kind": "cli-workflow",
       "executionMode": "read-only",
       "status": "candidate",
       "valueProof": "unproven",
-      "description": "Copilot-discoverable APIM VNet assessment with automatic SKU-specific selection, target/network overview, twelve coverage sections, endpoint/NSG evidence and private operator HTML/JSON separate from sanitized audit artifacts.",
+      "description": "Data-backed APIM VNet assessment: collected findings only, compact coverage limits, concrete preventive route-table settings and rationale, scoped resource links/GHC planning handoffs and platform observation provenance.",
       "intents": ["run all read-only APIM VNet checks", "generate and analyze sectioned APIM networking HTML reports"],
       "source": {
         "path": "../support-domains/api-management/tools/vnet-check/rules.json",
-        "sha256": "6532256b44eb408304e7211f4ffd385b91e46ad7893ea781c2459f9cc60f127c",
+        "sha256": "e4bb846ac6e3a359d4b864fa399faee732e665259e9493aef6741f1a85f31f9a",
         "entryPoint": "support-domains/api-management/tools/vnet-check/Test-ApimVnet.ps1"
       },
       "compatibility": {
         "resourceTypes": ["Microsoft.ApiManagement/service", "Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/routeTables"],
         "clouds": ["AzureCloud"],
         "environments": ["non-production", "production-read-only"],
-        "conditions": ["classic Developer/Premium injection or Premium v2 internal injection", "PowerShell 7.4 or later", "live collection requires existing Azure CLI authentication and exact private scope/principal", "HTML is a point-in-time report, not continuous monitoring", "named live operator reports stay in private user-local storage outside the repository; offline reports are not live evidence"]
+        "conditions": ["classic Developer/Premium injection or Premium v2 internal injection", "PowerShell 7.4 or later", "live collection requires existing Azure CLI authentication and exact private scope/principal", "HTML is a point-in-time report, not continuous monitoring", "private operator reports use Git-ignored .azureiq/private-reports/api-management/vnet-check/RUN-... in the trusted workspace; offline reports are not live evidence"]
       },
       "parameters": [
         { "name": "Describe", "required": false, "sensitive": false, "source": "artifact-default" },
+        { "name": "Preflight", "required": false, "sensitive": false, "source": "artifact-default" },
         { "name": "service and resource group names", "required": false, "sensitive": true, "source": "derived" },
         { "name": "offline snapshot path", "required": false, "sensitive": true, "source": "derived" },
         { "name": "private tenant, subscription and reader principal", "required": false, "sensitive": true, "source": "private-config" }
@@ -47,7 +48,7 @@
         "level": "static",
         "lastValidatedAt": "2026-10-14",
         "expiresAt": null,
-        "methods": ["offline SKU, NSG, endpoint, section coverage, HTML encoding and command-contract tests", "mocked collector and scope guards", "synthetic browser interaction validation"],
+        "methods": ["offline SKU, NSG, endpoint, forced-tunnel safeguard, UTC, private support-inventory and command-contract tests", "mocked collector, authentication preflight and scope guards", "scoped classic live read-only collection"],
         "evidenceRefs": ["support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1", "support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Collector.Tests.ps1", "support-domains/api-management/tools/vnet-check/COPILOT.md"]
       },
       "reuse": {
@@ -107,7 +108,7 @@
       },
       "owners": ["AzureIQ APIM support domain"],
       "supersedes": [],
-      "supersededBy": "apim.vnet-check@0.2.0"
+      "supersededBy": "apim.vnet-check@0.3.3"
     },
     {
       "id": "azure.resource-group.ensure",

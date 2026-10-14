@@ -5,6 +5,7 @@ param(
     [Parameter(Mandatory, ParameterSetName = 'Live')][ValidatePattern('^[A-Za-z0-9-]{1,50}$')][string]$ServiceName,
     [Parameter(Mandatory, ParameterSetName = 'Live')][ValidatePattern('^[A-Za-z0-9_.()-]{1,90}$')][string]$ResourceGroup,
     [Parameter(Mandatory, ParameterSetName = 'Describe')][switch]$Describe,
+    [Parameter(Mandatory, ParameterSetName = 'Preflight')][switch]$Preflight,
     [ValidateRange(1, 1440)][int]$MaxStatusAgeMinutes = 30
 )
 
@@ -56,6 +57,11 @@ $inputDigest = Get-StringDigest (@{
 } | ConvertTo-Json -Compress)
 
 try {
+    if ($Preflight) {
+        Import-Module (Join-Path $PSScriptRoot 'ApimVnet.Collector.psm1') -Force
+        Test-ApimVnetReader -WorkspaceRoot $workspaceRoot | ConvertTo-Json
+        exit 0
+    }
     Import-Module (Join-Path $PSScriptRoot 'ApimVnet.Report.psm1') -Force
     if ($PSCmdlet.ParameterSetName -eq 'Live') {
         Import-Module (Join-Path $PSScriptRoot 'ApimVnet.Collector.psm1') -Force
@@ -81,7 +87,10 @@ try {
         Result = $report.result; FailedChecks = $report.summary.failed; UnknownChecks = $report.summary.unknown
         Report = $reportPath; HtmlReport = $htmlPath; OperatorReport = $operatorReportPath; RunId = $runId
         AssessmentMode = $executionMode
-        Sections = @($report.sections | ForEach-Object { @{ Id = $_.id; Status = $_.status; Counts = $_.counts } })
+        ToolVersion = $report.toolVersion
+        EvidenceSummary = @($report.assessmentSummary | Where-Object label -ne 'Not tested')
+        NotAssessedChecks = @($report.findings | Where-Object assessment -eq 'Not tested').Count
+        Sections = @($report.sections | ForEach-Object { @{ Id = $_.id; Status = $_.status; Assessment = $_.assessment; Counts = $_.counts } })
     } | ConvertTo-Json -Depth 8
     if ($report.summary.failed -gt 0) { exit 2 }
     exit 3
@@ -92,9 +101,9 @@ try {
         'UNSUPPORTED_CLOUD_OR_ACCOUNT', 'AZURE_CLI_REQUIRED', 'ACCESS_DENIED', 'NOT_FOUND', 'THROTTLED',
         'CLI_READ_FAILED', 'CLI_READ_TIMEOUT', 'CLI_ARGUMENT_NOT_ALLOWED', 'INVALID_CLI_JSON', 'UNSUPPORTED_OR_BAD_REQUEST', 'LOCATION_LIMIT_EXCEEDED',
         'UNSUPPORTED_WORKSPACE_PROFILE', 'UNSUPPORTED_PRIVATE_PROFILE', 'INVALID_SERVICE_RESPONSE',
-        'PRIVATE_REPORT_LOCATION_UNAVAILABLE', 'PRIVATE_REPORT_INSIDE_WORKSPACE', 'PRIVATE_REPORT_REPARSE_POINT')
+        'PRIVATE_REPORT_NOT_IGNORED', 'PRIVATE_REPORT_REPARSE_POINT', 'RULE_REQUIREMENT_MISSING')
     $category = if ($_.Exception.Message -in $safeCodes) { $_.Exception.Message } else { 'ASSESSMENT_FAILED' }
-    try { Write-ApimExecutionRecord 'failed' "Assessment aborted: $category. No Azure mutations or success verdict." $inputDigest @() }
+    try { if (-not $Preflight) { Write-ApimExecutionRecord 'failed' "Assessment aborted: $category. No Azure mutations or success verdict." $inputDigest @() } }
     catch { [Console]::Error.WriteLine('{"status":"Failed","errorCategory":"AUDIT_RECORD_WRITE_FAILED"}') }
     [Console]::Error.WriteLine((@{ status = 'Failed'; runId = $runId; errorCategory = $category; message = 'No success verdict is available. Check input structure, private scope, reader principal and read permissions; raw errors are deliberately not printed.' } | ConvertTo-Json -Compress))
     exit 1
