@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0",
+  "status": "candidate",
+  "valueProof": "unproven",
+  "reviewedAt": "2026-10-14",
+  "sources": {
+    "classicSubnet": "https://learn.microsoft.com/azure/api-management/virtual-network-injection-resources",
+    "classicNetwork": "https://learn.microsoft.com/azure/api-management/virtual-network-reference",
+    "classicRouting": "https://learn.microsoft.com/azure/api-management/api-management-using-with-vnet#routing",
+    "internalDns": "https://learn.microsoft.com/azure/api-management/api-management-using-with-internal-vnet#dns-configuration",
+    "premiumV2": "https://learn.microsoft.com/azure/api-management/inject-vnet-v2",
+    "networkStatus": "https://learn.microsoft.com/rest/api/apimanagement/network-status/list-by-service?view=rest-apimanagement-2024-05-01"
+  },
+  "flows": [
+    { "id": "management", "family": "classic", "direction": "Inbound", "source": "ApiManagement", "destination": "VirtualNetwork", "ports": [3443], "protocol": "Tcp", "purpose": "Classic management endpoint" },
+    { "id": "https-ingress", "family": "classic", "mode": "External", "direction": "Inbound", "source": "Internet", "destination": "VirtualNetwork", "ports": [443], "protocol": "Tcp", "purpose": "External HTTPS gateway ingress" },
+    { "id": "load-balancer", "family": "classic", "sku": "Premium", "direction": "Inbound", "source": "AzureLoadBalancer", "destination": "VirtualNetwork", "ports": [6390], "protocol": "Tcp", "purpose": "Premium load balancer health probe" },
+    { "id": "certificates", "family": "classic", "direction": "Outbound", "source": "VirtualNetwork", "destination": "Internet", "ports": [80], "protocol": "Tcp", "purpose": "Certificate validation and management" },
+    { "id": "storage", "family": "classic", "direction": "Outbound", "source": "VirtualNetwork", "destination": "Storage", "regional": true, "ports": [443], "protocol": "Tcp", "purpose": "Azure Storage dependency" },
+    { "id": "sql", "family": "classic", "direction": "Outbound", "source": "VirtualNetwork", "destination": "Sql", "regional": true, "ports": [1433], "protocol": "Tcp", "purpose": "Azure SQL dependency" },
+    { "id": "key-vault", "family": "classic", "direction": "Outbound", "source": "VirtualNetwork", "destination": "AzureKeyVault", "ports": [443], "protocol": "Tcp", "purpose": "Azure Key Vault dependency" },
+    { "id": "monitor", "family": "classic", "direction": "Outbound", "source": "VirtualNetwork", "destination": "AzureMonitor", "ports": [1886, 443], "protocol": "Tcp", "purpose": "Azure Monitor diagnostics and metrics" },
+    { "id": "key-vault", "family": "premium-v2", "direction": "Outbound", "source": "VirtualNetwork", "destination": "AzureKeyVault", "ports": [443], "protocol": "Tcp", "purpose": "Premium v2 Azure Key Vault dependency" }
+  ]
+}

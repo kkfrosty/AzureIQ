@@ -42,9 +42,13 @@ Before adding more APIM guidance, run the same scenarios first with Azure MCP an
 
 Every capability is SKU, gateway, workspace, API-version, network, and region dependent. The onboarding workflow must resolve those conditions from current Microsoft documentation and the target resource before producing a change plan.
 
+## Tools
+
+See [APIM tools](tools/README.md) for standalone, versioned diagnostics. The [VNet checker](tools/vnet-check/README.md) discovers classic Developer/Premium versus Premium v2 injection and evaluates configuration without Azure writes. It is a separate candidate: offline tests do not confer this domain's existing live validation or value proof on it.
+
 ## Current Tool Boundary
 
-The current VS Code environment has the official API Management extension, REST Client, XML support, Azure MCP diagnostics, monitoring, documentation, Resource Graph, Activity Log, and related Azure surfaces. No dedicated generic API Management MCP management router was observed, and the local Azure CLI is absent.
+The reviewed VS Code environment has the official API Management extension, REST Client, XML support, Azure MCP diagnostics, monitoring, documentation, Resource Graph, Activity Log, and related Azure surfaces. No dedicated generic API Management MCP management router was observed. Azure CLI was absent at the original review; the standalone VNet checker now requires an independently installed CLI only for live collection.
 
 AppLens is the registered first-choice detector surface, but its coverage is narrow and unreliable here. Verified on 2026-07-24: it exposes a single conversational diagnose command rather than an enumerable detector list; it supports only `microsoft.web/sites`, `microsoft.containerservice/managedclusters`, and `microsoft.apimanagement/service`; it failed twice for the validated Developer-tier APIM service with `BadRequest`; and Container Apps backends support neither AppLens nor Resource Health, which returned `422`. Attempt the detector first, record the outcome, and continue to telemetry without waiting for it.
 

@@ -46,3 +46,9 @@ jobs:
       - name: Validate AzureIQ workspace
         shell: pwsh
         run: ./scripts/Test-Workspace.ps1
+
+      - name: Test APIM VNet checker offline
+        shell: pwsh
+        run: |
+          ./support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1
+          ./support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Collector.Tests.ps1

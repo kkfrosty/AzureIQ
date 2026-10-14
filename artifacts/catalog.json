@@ -9,6 +9,56 @@
   },
   "artifacts": [
     {
+      "id": "apim.vnet-check",
+      "version": "0.1.0",
+      "kind": "cli-workflow",
+      "executionMode": "read-only",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "SKU-discovered, read-only APIM VNet configuration checks for classic Developer/Premium and Premium v2 injection, with explicit unknowns and sanitized reports.",
+      "intents": ["check APIM VNet injection configuration", "identify APIM network configuration blockers"],
+      "source": {
+        "path": "../support-domains/api-management/tools/vnet-check/rules.json",
+        "sha256": "f78570ffc8de10f2ddcc21c907e9d0f1202d7449c5654e17ef914d6cf91b26e6",
+        "entryPoint": "support-domains/api-management/tools/vnet-check/Test-ApimVnet.ps1"
+      },
+      "compatibility": {
+        "resourceTypes": ["Microsoft.ApiManagement/service", "Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/routeTables"],
+        "clouds": ["AzureCloud"],
+        "environments": ["non-production", "production-read-only"],
+        "conditions": ["classic Developer/Premium internal/external injection or Premium v2 internal injection", "PowerShell 7.4 or later", "live collection requires Azure CLI and exact private tenant, subscription and principal scope"]
+      },
+      "parameters": [
+        { "name": "service and resource group names", "required": false, "sensitive": true, "source": "derived" },
+        { "name": "offline snapshot path", "required": false, "sensitive": true, "source": "derived" },
+        { "name": "private tenant, subscription and reader principal", "required": false, "sensitive": true, "source": "private-config" }
+      ],
+      "decisionPoints": [
+        {
+          "id": "unsupported-network-model",
+          "condition": "Discovery identifies integration, private endpoints, workspace gateways or an unsupported SKU.",
+          "question": "Should a separately reviewed rule set be developed for the discovered network model?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-14",
+        "expiresAt": null,
+        "methods": ["current Microsoft documentation review", "offline synthetic SKU, NSG, freshness, scope and privacy tests"],
+        "evidenceRefs": ["support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1", "support-domains/api-management/tools/vnet-check/SOURCES.md"]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": ["SKU or network model changes", "Microsoft network requirements change", "API versions or authentication adapter change"],
+        "updatePolicy": "Keep candidate until live baseline comparison; version behavioral changes rather than altering approved artifacts."
+      },
+      "owners": ["AzureIQ APIM support domain"],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
       "id": "azure.resource-group.ensure",
       "version": "1.0.0",
       "kind": "cli-operation",

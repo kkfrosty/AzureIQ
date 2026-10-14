@@ -15,6 +15,32 @@
   },
   "capabilities": [
     {
+      "id": "apim.vnet-configuration.assess",
+      "intents": ["check VNet-injected APIM configuration", "identify APIM subnet, NSG, DNS and routing evidence gaps"],
+      "owner": "composite",
+      "status": "draft",
+      "valueProof": "unproven",
+      "primary": {
+        "kind": "mcp",
+        "selector": "mcp_azure_mcp_ser_applens",
+        "operation": "service-supported diagnosis when an incident exists"
+      },
+      "limitations": [
+        "The standalone checker is candidate and offline-tested only; no VNet live baseline comparison has been performed.",
+        "The checker does not establish end-to-end traffic flow, and unsupported network models, unavailable reads and ambiguous NSG selectors remain unknown.",
+        "Native network-status availability, especially on Premium v2, is discovered rather than assumed.",
+        "The CLI collector requires a matching private Azure CLI principal, tenant and selected subscription and refuses cross-subscription references."
+      ],
+      "requiredEvidence": ["discovered SKU and injection mode", "every service location's subnet, NSG and route configuration", "fresh native status when available", "separate client/backend traffic evidence for causal diagnosis"],
+      "fallback": {
+        "kind": "support-domain",
+        "selector": "support-domains/api-management/tools/vnet-check",
+        "operation": "Test-ApimVnet.ps1"
+      },
+      "verification": ["Run deterministic offline tests for both SKU families.", "Compare against AppLens/MCP on approved known-good and disposable faulty configurations before promotion.", "Use independent traffic evidence; never declare health from configuration checks alone."],
+      "references": ["../support-domains/api-management/tools/vnet-check/README.md", "../support-domains/api-management/tools/vnet-check/SOURCES.md"]
+    },
+    {
       "id": "azure.incident.diagnose",
       "intents": [
         "diagnose Azure outage or unhealthy resource",
