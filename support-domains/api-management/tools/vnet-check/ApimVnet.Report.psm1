@@ -77,6 +77,9 @@ function ConvertTo-ApimVnetHtml {
 </header><div class="layout"><aside><nav aria-label="Report sections">
 <a href="#target-overview">Actual APIM and VNet configuration</a><a href="#findings-summary">Findings at a glance</a>
 "@)
+    if ($Report -is [System.Collections.IDictionary] -and $Report.Contains('package')) {
+        $null = $html.AppendLine("<span class=`"subtle`">Executed package SHA-256: $(Encode $Report.package.sha256)</span>")
+    }
     if ($Report.skuFamily -eq 'classic' -and $Report.networkMode -in @('Internal', 'External')) {
         $null = $html.AppendLine('<a href="#recommended-safeguards">Recommended safeguards</a>')
     }

@@ -81,6 +81,8 @@
         "The standalone checker remains candidate; scoped classic live collection is exercised, but Premium v2 and controlled faulty-path baseline comparisons remain pending.",
         "The checker does not establish end-to-end traffic flow, and unsupported network models, unavailable reads and ambiguous NSG selectors remain unknown.",
         "Native network-status availability, especially on Premium v2, is discovered rather than assumed.",
+        "Endpoint provisioning in progress and unevaluated firewall alternatives remain Needs review; missing recommended configuration is not a proven dependency outage.",
+        "Collection is sequential, not atomic; per-read times and ETag digests do not establish cross-resource configuration consistency.",
         "The CLI collector requires a matching private Azure CLI principal, tenant and selected subscription and refuses cross-subscription references."
       ],
       "requiredEvidence": ["verified reader preflight and requested private scope", "actual APIM and network context before recommendations", "every service location's subnet, NSG, endpoint and route configuration", "published findings backed by collected evidence; untested items are only coverage limits", "check-specific requirements with no generic documentation fallback", "section-local resource context and validated private portal links", "default UDR next hop and explicit classic management route-table/ApiManagement Internet route/subnet-association proposal", "qualified preventive rationale for future default routes or peering with gateway transit/BGP, not all APIM traffic", "named platform observations with source API, reported status, optionality and original UTC timestamps", "specific customer evidence states without relabeling stale or untested paths as passes", "scoped GHC planning handoffs distinguished from approval or execution", "persisted current-version support report with browser readability verified when available", "separate client/backend traffic evidence for causal diagnosis"],
@@ -89,7 +91,7 @@
         "selector": "mcp_azure_mcp_ser_applens",
         "operation": "service-supported diagnosis; attempt first for active incidents, but not a substitute for the requested checker report"
       },
-      "verification": ["Run deterministic offline tests for both SKU families.", "Compare against AppLens/MCP on approved known-good and disposable faulty configurations before promotion.", "Use independent traffic evidence; never declare health from configuration checks alone."],
+      "verification": ["Run deterministic endpoint-state, package-fingerprint, phase-diagnostic and scope-guard tests on Windows and Linux.", "Compare against supported Azure tools on approved known-good and disposable faulty configurations before promotion; authentication failures are not tool gaps.", "Use independent traffic evidence; never declare health from configuration checks alone.", "Use the diagnostics package manifest to identify all executed checker files; keep the registered rule digest distinct."],
       "references": ["../support-domains/api-management/tools/vnet-check/README.md", "../support-domains/api-management/tools/vnet-check/SOURCES.md", "../support-domains/api-management/tools/vnet-check/COPILOT.md", "../.github/prompts/apim-vnet-check.prompt.md"]
     },
     {

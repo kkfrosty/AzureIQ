@@ -47,8 +47,18 @@ jobs:
         shell: pwsh
         run: ./scripts/Test-Workspace.ps1
 
+  apim-vnet:
+    name: APIM VNet offline (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Test APIM VNet checker offline
         shell: pwsh
         run: |
-          ./support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1
-          ./support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Collector.Tests.ps1
+          & (Join-Path $PWD 'support-domains\api-management\tools\vnet-check\tests\Test-ApimVnet.Tests.ps1')
+          & (Join-Path $PWD 'support-domains\api-management\tools\vnet-check\tests\Test-ApimVnet.Collector.Tests.ps1')

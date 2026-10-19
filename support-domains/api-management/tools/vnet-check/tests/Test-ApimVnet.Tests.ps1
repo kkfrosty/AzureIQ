@@ -169,10 +169,24 @@ $snapshot.regions[0].networkSecurityGroup.properties.securityRules = @(
     (New-Rule -Access Deny -Destination '10.0.1.0/24' -Port '53'), (New-Rule -Priority 200), (New-Rule -Direction Inbound))
 Assert-True ((Finding (Assess $snapshot) 'custom-dns-Udp')[0].status -eq 'Fail') 'CIDR rule can definitively block custom resolver'
 $snapshot.regions[0].routeTable = @{ properties = @{ routes = @(@{ properties = @{ addressPrefix = '0.0.0.0/0'; nextHopType = 'VirtualAppliance' } }) } }
+$snapshot.regions[0].subnet.properties.serviceEndpoints = @(@{ service = 'Microsoft.Storage'; provisioningState = 'Updating' })
+$updatingEndpoint = (Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0]
+Assert-True ($updatingEndpoint.status -eq 'Unknown' -and $updatingEndpoint.assessment -eq 'Needs review') 'Updating endpoint under forced tunneling is unverified, not a demonstrated failure'
+foreach ($state in @($null, 'Deleting')) {
+    $snapshot.regions[0].subnet.properties.serviceEndpoints[0].provisioningState = $state
+    Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].assessment -eq 'Needs review') 'Unverified endpoint provisioning state does not inherit a forced-tunnel failure'
+}
+$snapshot.regions[0].subnet.properties.serviceEndpoints[0].provisioningState = 'Failed'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Fail') 'Explicit endpoint provisioning failure remains a failure under forced tunneling'
+$snapshot.regions[0].subnet.properties.serviceEndpoints[0].provisioningState = 'Succeeded'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Pass') 'Successful endpoint configuration remains a configuration pass under forced tunneling'
+$snapshot.regions[0].subnet.properties.serviceEndpoints = @()
+$missingEndpoint = (Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0]
+Assert-True ($missingEndpoint.status -eq 'Unknown' -and $missingEndpoint.assessment -eq 'Needs review' -and $missingEndpoint.observed -match 'firewall alternative.*not evaluated') 'Missing endpoint with an unassessed firewall path is not a demonstrated dependency failure'
 Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].status -eq 'Fail') 'Forced tunnel without management return route is a required safeguard gap, not an asserted outage'
-Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Fail') 'Forced tunnel requires the Storage endpoint safeguard or a verified alternative'
-Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Sql')[0].status -eq 'Fail') 'Forced tunnel requires the primary SQL endpoint safeguard or a verified alternative'
-Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.KeyVault')[0].status -eq 'Fail') 'Forced tunnel requires the Key Vault endpoint safeguard or a verified alternative'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Unknown') 'Forced tunnel Storage connectivity needs endpoint or firewall evidence'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Sql')[0].status -eq 'Unknown') 'Forced tunnel primary SQL connectivity needs endpoint or firewall evidence'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.KeyVault')[0].status -eq 'Unknown') 'Forced tunnel Key Vault connectivity needs endpoint or firewall evidence'
 Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.EventHub')[0].status -eq 'Unknown') 'Unused or unknown Event Hubs is not declared a required failure'
 $snapshot.regions[0].routeTable.properties.routes += @{ properties = @{ addressPrefix = 'ApiManagement'; nextHopType = 'Internet'; provisioningState = 'Succeeded' } }
 Assert-True ((Finding (Assess $snapshot) 'management-return-path')[0].status -eq 'Pass') 'Global ApiManagement Internet UDR meets configured return-path safeguard'
@@ -187,7 +201,7 @@ $snapshot.regions[0].routeTable.properties.routes[0].properties.nextHopType = 'N
 Assert-True ((Finding (Assess $snapshot) 'effective-routing')[0].status -eq 'Fail') 'Discard default UDR is an explicit configuration issue'
 Assert-True ((Finding (Assess $snapshot) 'effective-routing')[0].observed -match 'changed or removed') 'Discard-route finding preserves independent durable safeguard recommendations'
 $snapshot.regions[0].routeTable.properties.routes[0].properties.nextHopType = 'VirtualNetworkGateway'
-Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].status -eq 'Fail') 'Gateway default route also triggers forced-tunnel safeguards'
+Assert-True ((Finding (Assess $snapshot) 'service-endpoint-Microsoft.Storage')[0].assessment -eq 'Needs review') 'Gateway default route also requires verification without asserting a failure'
 $snapshot = New-Snapshot -Sku PremiumV2
 $snapshot.regions[0].routeTable = @{ properties = @{ routes = @(@{ properties = @{ addressPrefix = '0.0.0.0/0'; nextHopType = 'VirtualAppliance' } }) } }
 Assert-True ((Finding (Assess $snapshot) 'management-return-path').Count -eq 0) 'Classic service-tag return route is not imposed on Premium v2'
@@ -349,7 +363,22 @@ $inputPath = Join-Path $testDirectory 'invalid.json'
 $null = New-Item -ItemType Directory -Path $testDirectory -Force
 $createdRuns = [System.Collections.Generic.List[string]]::new()
 $privateRunDirectory = $null
+$packageDirectory = Join-Path $testDirectory 'package'
 try {
+    $fingerprint = Get-ApimVnetPackageFingerprint
+    Assert-True ($fingerprint.files.Count -eq 7 -and $fingerprint.sha256 -match '^[a-f0-9]{64}$') 'Executable provenance includes the entrypoint, collector, evaluator, renderer, rule catalog and UI assets'
+    $null = New-Item -ItemType Directory -Path $packageDirectory
+    foreach ($file in $fingerprint.files) { Copy-Item -LiteralPath (Join-Path $toolRoot $file.name) -Destination (Join-Path $packageDirectory $file.name) }
+    Assert-True ((Get-ApimVnetPackageFingerprint -ToolRoot $packageDirectory).sha256 -eq $fingerprint.sha256) 'Identical tool packages produce the same fingerprint in a different directory'
+    $cssPath = Join-Path $packageDirectory 'report.css'
+    $css = (Get-Content -Raw -LiteralPath $cssPath).Replace("`r`n", "`n").Replace("`r", "`n")
+    $css.Replace("`n", "`r`n") | Set-Content -LiteralPath $cssPath -Encoding utf8NoBOM -NoNewline
+    Assert-True ((Get-ApimVnetPackageFingerprint -ToolRoot $packageDirectory).sha256 -eq $fingerprint.sha256) 'Windows and Linux line endings do not change the normalized package identity'
+    foreach ($name in @('ApimVnet.Collector.psm1', 'ApimVnet.Rules.psm1', 'ApimVnet.Report.psm1', 'report.js')) {
+        Add-Content -LiteralPath (Join-Path $packageDirectory $name) -Value '# synthetic fingerprint change'
+        Assert-True ((Get-ApimVnetPackageFingerprint -ToolRoot $packageDirectory).sha256 -ne $fingerprint.sha256) "Executable change in $name changes package identity without changing rules.json"
+        Copy-Item -LiteralPath (Join-Path $toolRoot $name) -Destination (Join-Path $packageDirectory $name)
+    }
     $privateRunId = 'RUN-' + [guid]::NewGuid().ToString('N').ToUpperInvariant()
     $privateOutput = Write-ApimVnetOperatorReport -Snapshot $privateSnapshot -Report $privateAssessment -RunId $privateRunId -WorkspaceRoot $workspaceRoot
     $privateRunDirectory = Split-Path -Parent $privateOutput.Report
@@ -392,6 +421,13 @@ try {
     $record = Get-Content -Raw -LiteralPath $recordPath
     Assert-True ($record -notmatch 'private-apim|private-vnet|00000000-' -and ($record | ConvertFrom-Json).privacy.customerIdentifiersStored -eq $false) 'Audit records retain their sanitized privacy contract'
     Assert-True ($record | Test-Json -SchemaFile (Join-Path $workspaceRoot 'schemas\execution-record.schema.json')) 'Execution record conforms to repository schema'
+    $diagnostics = Get-Content -Raw -LiteralPath $result.Diagnostics | ConvertFrom-Json -AsHashtable -Depth 30
+    Assert-True ($result.PackageDigest -eq $fingerprint.sha256 -and $diagnostics.package.sha256 -eq $fingerprint.sha256) 'Run output and persisted diagnostics identify the full executed package'
+    $persisted = Get-Content -Raw -LiteralPath $result.Report | ConvertFrom-Json -AsHashtable -Depth 30
+    Assert-True ($persisted.package.sha256 -eq $fingerprint.sha256 -and (Get-Content -Raw -LiteralPath $result.HtmlReport) -match $fingerprint.sha256) 'JSON and HTML reports expose the same executed-package identity'
+    Assert-True ($diagnostics.stages.Count -gt 3 -and 'evaluating-rules' -in $diagnostics.stages.name -and $diagnostics.errorCategory -eq '') 'Successful assessment records safe execution phases without a fictitious error'
+    Assert-True (($diagnostics | ConvertTo-Json -Depth 30) -notmatch 'private-hostname|private raw detail|00000000-|/subscriptions/') 'Diagnostics contain no snapshot identifiers or raw errors'
+    Assert-True ('diagnostics.json' -in (($record | ConvertFrom-Json).verification.evidenceRefs)) 'The schema-conforming execution record references complete-package diagnostics'
     $snapshot.regions[0].subnet.properties.delegations = @(@{ properties = @{ serviceName = 'incorrect' } })
     $snapshot | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $fixturePath -Encoding utf8NoBOM
     $output = & pwsh -NoProfile -File (Join-Path $toolRoot 'Test-ApimVnet.ps1') -SnapshotPath $fixturePath
@@ -406,6 +442,8 @@ try {
     $createdRuns.Add($failedRun)
     $failedRecord = Get-Content -Raw -LiteralPath (Join-Path $failedRun 'execution-record.json')
     Assert-True ($failedRecord | Test-Json -SchemaFile (Join-Path $workspaceRoot 'schemas\execution-record.schema.json')) 'Failure audit record conforms to schema'
+    $failureDiagnostics = Get-Content -Raw -LiteralPath (Join-Path $failedRun 'diagnostics.json') | ConvertFrom-Json -AsHashtable
+    Assert-True ($failure.stage -eq 'evaluating-rules' -and $failureDiagnostics.stage -eq 'evaluating-rules' -and $failureDiagnostics.exceptionType) 'An invalid snapshot records the failing phase and exception type without raw error text'
     $description = & pwsh -NoProfile -File (Join-Path $toolRoot 'Test-ApimVnet.ps1') -Describe
     Assert-True ($LASTEXITCODE -eq 0 -and (($description -join "`n" | ConvertFrom-Json).sections.Count -eq 12)) 'Metadata discovery works without Azure calls'
     $sampleReport = $null
@@ -434,8 +472,14 @@ try {
         if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath }
         $htmlPath = Join-Path $run 'report.html'
         if (Test-Path -LiteralPath $htmlPath) { Remove-Item -LiteralPath $htmlPath }
+        $diagnosticsPath = Join-Path $run 'diagnostics.json'
+        if (Test-Path -LiteralPath $diagnosticsPath) { Remove-Item -LiteralPath $diagnosticsPath }
         Remove-Item -LiteralPath (Join-Path $run 'execution-record.json') -ErrorAction Stop
         Remove-Item -LiteralPath $run -ErrorAction Stop
+    }
+    if (Test-Path -LiteralPath $packageDirectory) {
+        foreach ($file in $fingerprint.files) { Remove-Item -LiteralPath (Join-Path $packageDirectory $file.name) }
+        Remove-Item -LiteralPath $packageDirectory
     }
     foreach ($file in @($fixturePath, $inputPath)) {
         if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file }

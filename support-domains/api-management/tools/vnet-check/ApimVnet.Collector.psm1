@@ -134,8 +134,10 @@ function Get-ApimVnetSnapshot {
     $configurationText = $profile.configurationText
     $configurationPath = $profile.configurationPath
     $tracked = $profile.tracked
+    $collectionStartedAt = [datetimeoffset]::UtcNow
+    $reads = [System.Collections.Generic.List[object]]::new()
     function Read-Resource {
-        param([string]$Id)
+        param([string]$Id, [string]$Kind)
         if ((Get-Content -Raw -LiteralPath $configurationPath) -cne $configurationText -or
             (Get-Content -Raw -LiteralPath (Join-Path $WorkspaceRoot 'config\azureiq.yaml')) -cne $tracked) {
             throw 'PRIVATE_SCOPE_CHANGED'
@@ -143,10 +145,29 @@ function Get-ApimVnetSnapshot {
         $account = Invoke-ReaderCli @('account', 'show')
         Assert-ApimReaderContext $configuration $account
         $uri = Get-ApimReadUri $Id $configuration.scope.subscriptionIds[0]
-        return Invoke-ReaderCli @('rest', '--method', 'get', '--url', $uri, '--subscription', $configuration.scope.subscriptionIds[0])
+        $readStartedAt = [datetimeoffset]::UtcNow
+        $status = 'Succeeded'
+        $etagDigest = $null
+        try {
+            $response = Invoke-ReaderCli @('rest', '--method', 'get', '--url', $uri, '--subscription', $configuration.scope.subscriptionIds[0])
+            if ($response -is [System.Collections.IDictionary] -and $response.Contains('etag') -and $response.etag) {
+                $etagDigest = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData(
+                    [System.Text.Encoding]::UTF8.GetBytes([string]$response.etag))).ToLowerInvariant()
+            }
+            return $response
+        } catch {
+            $status = if (Test-OptionalReadFailure $_.Exception.Message) { $_.Exception.Message } else { 'READ_ABORTED' }
+            throw
+        } finally {
+            $reads.Add(@{
+                ordinal = $reads.Count + 1; resourceKind = $Kind; apiVersion = '2024-05-01'
+                startedAt = $readStartedAt.ToString('o'); completedAt = [datetimeoffset]::UtcNow.ToString('o')
+                status = $status; etagDigest = $etagDigest
+            })
+        }
     }
     $id = "/subscriptions/$($configuration.scope.subscriptionIds[0])/resourceGroups/$ResourceGroup/providers/Microsoft.ApiManagement/service/$ServiceName"
-    $service = Read-Resource $id
+    $service = Read-Resource $id 'apim-service'
     if (-not $service.ContainsKey('properties') -or -not $service.ContainsKey('sku')) { throw 'INVALID_SERVICE_RESPONSE' }
     $locations = @(@{
         location = $service.location; capacity = $service.sku.capacity
@@ -170,13 +191,13 @@ function Get-ApimVnetSnapshot {
             continue
         }
         $subnetId = $networkConfiguration.subnetResourceId
-        try { $region.subnet = Read-Resource $subnetId }
+        try { $region.subnet = Read-Resource $subnetId 'subnet' }
         catch {
             if (-not (Test-OptionalReadFailure $_.Exception.Message)) { throw }
             $region.evidenceGaps.Add("SUBNET_$($_.Exception.Message)")
         }
         $vnetId = $subnetId -replace '/subnets/[^/]+$', ''
-        try { $region.virtualNetwork = Read-Resource $vnetId }
+        try { $region.virtualNetwork = Read-Resource $vnetId 'virtual-network' }
         catch {
             if (-not (Test-OptionalReadFailure $_.Exception.Message)) { throw }
             $region.evidenceGaps.Add("VNET_$($_.Exception.Message)")
@@ -186,7 +207,7 @@ function Get-ApimVnetSnapshot {
                 $reference = $region.subnet.properties[$type]
                 if ($null -eq $reference) { continue }
                 if (-not $reference.ContainsKey('id')) { $region.evidenceGaps.Add('INVALID_NETWORK_REFERENCE'); continue }
-                try { $region[$type] = Read-Resource $reference.id }
+                try { $region[$type] = Read-Resource $reference.id $type }
                 catch {
                     if (-not (Test-OptionalReadFailure $_.Exception.Message)) { throw }
                     $region.evidenceGaps.Add("NETWORK_RULE_$($_.Exception.Message)")
@@ -197,7 +218,7 @@ function Get-ApimVnetSnapshot {
     }
     $native = @{ available = $false; locations = @(); errorCategory = $null }
     try {
-        $native.locations = @(Read-Resource "$id/networkstatus")
+        $native.locations = @(Read-Resource "$id/networkstatus" 'apim-network-status')
         $native.available = $true
     } catch {
         if (-not (Test-OptionalReadFailure $_.Exception.Message)) { throw }
@@ -206,6 +227,11 @@ function Get-ApimVnetSnapshot {
     return @{
         schemaVersion = 1; capturedAt = [datetimeoffset]::UtcNow.ToString('o')
         service = $service; regions = $regions.ToArray(); nativeNetworkStatus = $native
+        collectionEvidence = @{
+            transport = 'azure-cli-arm-get'; startedAt = $collectionStartedAt.ToString('o')
+            completedAt = [datetimeoffset]::UtcNow.ToString('o'); reads = $reads.ToArray()
+            consistency = 'Sequential configuration GETs, not an atomic snapshot; ETag digests identify returned resource versions when available. No cross-resource consistency or mid-run Azure configuration drift detection is claimed.'
+        }
     }
 }
 

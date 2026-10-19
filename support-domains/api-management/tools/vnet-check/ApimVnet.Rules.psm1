@@ -311,6 +311,30 @@ function Get-ApimVnetTargetOverview {
     return $overview
 }
 
+function Get-ApimVnetPackageFingerprint {
+    [CmdletBinding()]
+    param([string]$ToolRoot = $PSScriptRoot)
+    $files = @(
+        'ApimVnet.Collector.psm1', 'ApimVnet.Report.psm1', 'ApimVnet.Rules.psm1',
+        'report.css', 'report.js', 'rules.json', 'Test-ApimVnet.ps1'
+    )
+    $entries = @(
+        foreach ($name in $files) {
+            $text = (Get-Content -Raw -LiteralPath (Join-Path $ToolRoot $name)).Replace("`r`n", "`n").Replace("`r", "`n")
+            @{
+                name = $name
+                sha256 = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($text))).ToLowerInvariant()
+            }
+        }
+    )
+    $manifest = ($entries | ForEach-Object { "$($_.name):$($_.sha256)" }) -join "`n"
+    return @{
+        normalization = 'UTF-8 text, LF-normalized line endings; fixed ordered name:sha256 manifest'
+        sha256 = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($manifest))).ToLowerInvariant()
+        files = $entries
+    }
+}
+
 function Get-ApimVnetToolContract {
     $rules = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'rules.json') | ConvertFrom-Json -AsHashtable
     return [ordered]@{
@@ -321,10 +345,10 @@ function Get-ApimVnetToolContract {
         liveArguments = @('-ServiceName <name>', '-ResourceGroup <name>')
         offlineArguments = @('-SnapshotPath <path>')
         scope = 'Ignored private configuration; exact active CLI tenant, selected subscription and principal required'
-        outputs = @('report.json', 'report.html', 'execution-record.json')
+        outputs = @('report.json', 'report.html', 'execution-record.json', 'diagnostics.json')
         outputStorage = @{
             sanitized = 'Ignored .azureiq\runs\RUN-...; no target names or address literals'
-            liveOperator = 'Git-ignored workspace .azureiq\private-reports\api-management\vnet-check\RUN-...; target/network metadata, no tenant/subscription/principal IDs or raw payloads'
+            liveOperator = 'Git-ignored workspace .azureiq\private-reports\api-management\vnet-check\RUN-...; private portal links contain resource/subscription identifiers; no credentials, tenant/principal IDs or raw payloads'
         }
         exitCodes = @{ '0' = 'Describe or ready preflight only; not service health'; '1' = 'Aborted: inspect safe error and audit record when created'; '2' = 'Assessment completed: issues found'; '3' = 'Assessment completed: inconclusive' }
         sections = @($rules.sections | ForEach-Object { @{ id = $_.id; title = $_.title; coverage = $_.coverage } })
@@ -541,18 +565,21 @@ function Invoke-ApimVnetAssessment {
                         $null -ne $_ -and (Get-Field $_ 'service') -eq $endpoint
                     })
                     $endpointStatus = 'Unknown'
+                    $endpointAssessment = if ($forcedTunnel) { 'Needs review' } else { 'Recommendation' }
                     $endpointObserved = "$endpoint is NOT CONFIGURED. Recommended preventive safeguard is missing; this alone is not proof of an outage."
                     if ($forcedTunnel -and $endpoint -ne 'Microsoft.EventHub') {
-                        $endpointStatus = 'Fail'
-                        $endpointObserved = "$endpoint is NOT CONFIGURED with a default route to an appliance or virtual network gateway. Required forced-tunnel endpoint safeguard is missing; a verified firewall alternative has not been established by this collector. This configuration gap is not a confirmed outage cause."
+                        $endpointObserved = "$endpoint is NOT CONFIGURED with a default route to an appliance or virtual network gateway. The recommended endpoint safeguard is missing; the supported firewall alternative was not evaluated. Dependency connectivity remains unverified, not a demonstrated failure."
                     }
                     if ($configured.Count -gt 0) {
+                        $endpointAssessment = 'Needs review'
                         $states = @($configured | ForEach-Object { Get-Field $_ 'provisioningState' })
                         if ($states.Count -gt 0 -and @($states | Where-Object { $_ -ne 'Succeeded' }).Count -eq 0) {
                             $endpointStatus = 'Pass'
+                            $endpointAssessment = 'Checked'
                             $endpointObserved = 'Matching service endpoint configuration reports Succeeded; destination reachability is not established.'
                         } elseif ('Failed' -in $states) {
                             $endpointStatus = 'Fail'
+                            $endpointAssessment = 'Issue'
                             $endpointObserved = 'Matching service endpoint configuration reports provisioning Failed.'
                         } else { $endpointObserved = 'Matching endpoint exists, but successful provisioning is not established.' }
                     }
@@ -563,7 +590,7 @@ function Invoke-ApimVnetAssessment {
                     } else {
                         'Recommend enabling this endpoint proactively before future VNet changes. No forced-tunnel default UDR was observed; BGP/effective routes remain unverified. Changes require approval.'
                     }
-                    Add-Finding "service-endpoint-$endpoint" $regionIndex $endpointStatus $(if ($endpointStatus -eq 'Fail') { 'Error' } elseif ($endpointStatus -eq 'Unknown') { 'Warning' } else { 'Info' }) 'Service-endpoint configuration is assessed separately from the NSG and effective network path.' $rules.sources.classicRouting -Expected $expectedEndpoint -Observed $endpointObserved -NextStep $nextEndpoint
+                    Add-Finding "service-endpoint-$endpoint" $regionIndex $endpointStatus $(if ($endpointStatus -eq 'Fail') { 'Error' } elseif ($endpointStatus -eq 'Unknown') { 'Warning' } else { 'Info' }) 'Service-endpoint configuration is assessed separately from the NSG and effective network path.' $rules.sources.classicRouting -Expected $expectedEndpoint -Observed $endpointObserved -NextStep $nextEndpoint -Assessment $endpointAssessment
                 }
             } else {
                 Add-Finding 'service-endpoint-classic-guidance' $regionIndex 'NotApplicable' 'Info' 'Do not impose classic forced-tunneling endpoint recommendations on Premium v2 injection.' $rules.sources.premiumV2 -Expected 'Use Premium v2 requirements, including Key Vault egress.' -Observed 'Premium v2 injection was discovered.'
@@ -845,4 +872,4 @@ function Invoke-ApimVnetAssessment {
     return $report
 }
 
-Export-ModuleMember -Function Invoke-ApimVnetAssessment, Get-ApimVnetToolContract, Get-ApimVnetTargetOverview
+Export-ModuleMember -Function Invoke-ApimVnetAssessment, Get-ApimVnetToolContract, Get-ApimVnetTargetOverview, Get-ApimVnetPackageFingerprint

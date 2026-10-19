@@ -1,6 +1,6 @@
 # APIM VNet Checker
 
-**Version:** 0.3.3
+**Version:** 0.4.0
 
 **Status:** candidate; offline regression tested and scoped classic live collection exercised; Premium v2 live comparison and controlled failure-path validation remain pending.
 
@@ -26,6 +26,21 @@ Expected improvement: reproducible SKU-specific findings, ordered NSG evaluation
 - Reader access to APIM, its VNets/subnets, NSGs and route tables is sufficient for the configuration GETs. Native network-status read also requires `Microsoft.ApiManagement/service/networkstatus/read`. Missing permissions become explicit evidence gaps, except the initial service/authentication read, which aborts.
 
 The CLI fallback is used because this repeatable standalone collector cannot invoke editor-only MCP tools, and no dedicated generic APIM management router was discovered. All resource operations are allowlisted ARM GETs. Azure CLI authentication context is checked immediately before every resource read. Cross-subscription network references are rejected rather than broadening scope.
+
+### Tool selection and evidence boundary
+
+GHC remains the orchestrator: it selects an existing supported MCP/extension
+tool for an exact operation when appropriate, or invokes this registered
+read-only checker for deterministic evaluation and reporting. This collector
+itself uses Azure CLI/ARM GETs, not Azure MCP. A failed MCP authentication
+attempt is not a capability gap. Do not build new transports or execution
+adapters during a service incident merely to avoid an authentication problem.
+
+AI explanations must preserve the actual tool source, observation time and
+evidence limits. Neither a missing service endpoint nor an unevaluated firewall
+path establishes a dependency outage. Keep supported transport changes separate
+from the pure evaluator and add comparison tests before claiming equivalent
+coverage through a new collector.
 
 Each CLI process has a 60-second timeout, and collection is limited to ten service locations. There are no retries or automatic credential installation/login steps. Resource names use a deliberately restricted ASCII character set; unsupported names fail explicitly.
 
@@ -210,7 +225,7 @@ Aborted assessments also attempt to write a sanitized failure execution record. 
 | 2 | Assessment completed with at least one failed check; see the report |
 | 3 | Assessment completed without failed checks, but connectivity remains inconclusive |
 
-Version 0.3.3 intentionally has no healthy/exit-zero service assessment verdict. A clean static configuration does not establish correct DNS, routing, backend behavior or policy execution.
+Version 0.4.0 intentionally has no healthy/exit-zero service assessment verdict. A clean static configuration does not establish correct DNS, routing, backend behavior or policy execution.
 
 Native observations older than 30 minutes or more than five minutes in the future are unknown. Use `-MaxStatusAgeMinutes` to change the age threshold. Stale configuration captures are labeled; their findings describe captured configuration, not current live state.
 
@@ -225,7 +240,7 @@ Native observations older than 30 minutes or more than five minutes in the futur
 | NSG | Attachment; ordered custom/default rules, direction, protocol, singular/plural address and port selectors, port ranges |
 | Classic dependencies | Management 3443, external HTTPS 443, Premium probe 6390, certificate HTTP 80, Storage 443, SQL 1433, Key Vault 443, Azure Monitor 1886/443 |
 | Regional tags | Storage/SQL coverage evaluated for both local and primary regions |
-| Service endpoints | Explicit proactive recommendations for Storage, primary-region SQL, Key Vault and optional Event Hubs. Missing endpoints are warnings without observed forced tunneling. A default UDR to VirtualAppliance/VirtualNetworkGateway escalates absent core endpoints to required safeguard gaps (`Fail`), not confirmed outage causes; a verified maintained firewall alternative can satisfy connectivity. Event Hubs applicability remains unknown until feature use is established. Premium v2 does not inherit classic recommendations. |
+| Service endpoints | Proactive recommendations for Storage, primary-region SQL, Key Vault and conditional Event Hubs. Missing endpoints without observed forced tunneling are recommendations. With a default UDR to VirtualAppliance/VirtualNetworkGateway, absent endpoints are `Needs review` because the supported firewall alternative was not evaluated, not `Fail`. Existing endpoints in Updating/other unverified states stay `Needs review`; explicit provisioning Failed is `Fail`, and Succeeded passes only the configuration check. Premium v2 does not inherit classic recommendations. |
 | Premium v2 dependencies | Key Vault 443, without imposing classic control-plane requirements |
 | DNS | Custom resolver UDP/TCP 53 NSG checks; actual resolution, forwarding and internal gateway DNS remain unknown |
 | Routes | Classifies `0.0.0.0/0` next hops; Internet is not forced tunneling, and None is an explicit discard-route finding (`Fail`) without asserting all flows are affected. Checks global `ApiManagement` -> `Internet` successful UDR provisioning separately from NSG TCP 3443. Missing/wrong return safeguard is `Fail` under configured forced tunneling; regional-tag coverage, IP-route alternatives, BGP and effective behavior remain unknown. |
@@ -238,6 +253,46 @@ affect existing firewall designs. Propose changes for approval, never apply them
 automatically. Under forced tunneling, missing endpoint findings identify an
 unmet recommended safeguard, not proof that a valid firewall alternative is
 absent or that APIM is down.
+
+## Reproducibility and troubleshooting
+
+Every completed assessment writes sanitized `diagnostics.json` alongside the
+execution record. The output returns `Diagnostics` and `PackageDigest`; JSON
+reports also carry the executed package manifest. That manifest fingerprints
+the entrypoint, collector, evaluator, renderer, rules, CSS and JavaScript as a
+fixed ordered UTF-8/LF-normalized file list. Editing any of those changes the
+package identity even if the rule-catalog version/digest remains unchanged.
+The entrypoint checks for package drift before recording completion.
+
+The execution record's artifact digest still identifies the registered
+`rules.json` source; its evidence references link to `diagnostics.json` for the
+complete runtime package fingerprint. The fingerprint is provenance, not code
+signing, a trusted-release attestation or a guarantee of rule correctness.
+
+Diagnostics contain safe execution-stage names/times, PowerShell version,
+platform, error category and exception type, never exception messages/stacks
+or raw Azure responses. An invalid snapshot, for example, identifies the
+`evaluating-rules` phase rather than only `ASSESSMENT_FAILED`. Describe and
+preflight still create no run records.
+
+Completed live collections record a start/end interval and each attempted
+resource GET's ordinal, resource kind, API version, start/end time, safe result
+and returned ETag digest when available. Optional read failures retain their
+safe categories. No target resource IDs or raw ETags are copied to diagnostics.
+An early aborted collection has the entrypoint's phase diagnostics, not a
+promised complete resource-read history.
+
+These are **sequential reads, not an atomic snapshot**. ETag digests identify
+the returned versions but do not detect all mid-run changes across resources.
+Cross-resource drift detection, Linux/Cloud Shell live validation, Premium v2
+live comparison and controlled fault-path acceptance remain explicit pending
+validation work, not repaired or certified capabilities.
+
+The two endpoint classification defects were reproduced with synthetic
+fixtures before correction. Regression tests now distinguish missing,
+provisioning-in-progress, explicit provisioning failure and successful
+configuration from native dependency success/failure. A passing offline suite
+does not establish live platform accuracy.
 
 The private HTML/JSON includes configured custom/default NSG rules (priority,
 direction, protocol, address and port selectors), endpoint provisioning, route
@@ -272,6 +327,14 @@ pwsh -NoProfile -File .\support-domains\api-management\tools\vnet-check\tests\Te
 .\scripts\Test-Workspace.ps1
 ```
 
-The tests are deterministic and make zero Azure calls. Live acceptance remains outstanding: compare known-good classic and Premium v2 services against AppLens/MCP under equivalent permissions, then reproduce selected misconfigurations only in a separately approved disposable environment. Do not inject faults or create resources as part of this checker.
+The tests are deterministic and make zero Azure calls. CI schedules the offline
+suites on Windows and Ubuntu independently of the workspace build. Native CLI
+launcher tests use local fake Windows/Linux executables, not Azure credentials.
+Configured CI is not evidence that a remote job passed or that Cloud Shell is
+live-certified. Live acceptance remains outstanding: compare known-good
+classic and Premium v2 services against supported Azure tools under equivalent
+permissions, then reproduce selected faults only in a separately approved
+disposable environment. Do not inject faults or create resources as part of
+this checker.
 
 To retain a synthetic HTML demonstration generated by the actual evaluator and renderer, run the assessment test suite with `-KeepSampleReport`. Its final output supplies `SyntheticSampleHtml`; the report is labeled offline and is not a live diagnosis.

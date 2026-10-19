@@ -6,7 +6,7 @@ Reviewed 2026-10-14 using current Microsoft documentation. These are versioned r
 | --- | --- | --- |
 | [Injection network resources](https://learn.microsoft.com/azure/api-management/virtual-network-injection-resources) | Classic Developer/Premium | Same region/subscription, /29 minimum, no delegation, attached NSG, per-location evaluation. Classic unit address arithmetic checked; actual free capacity unknown. |
 | [Classic VNet configuration reference](https://learn.microsoft.com/azure/api-management/virtual-network-reference) | Classic only | Required dependency NSG ports and regional Storage/SQL tags. Developer load-balancer exception takes precedence over applying the Premium probe requirement blindly. |
-| [External VNet routing](https://learn.microsoft.com/azure/api-management/api-management-using-with-vnet#routing) | Classic external/internal routing guidance | Strong proactive endpoint recommendation; VirtualAppliance/VirtualNetworkGateway default UDR classification; global ApiManagement service-tag Internet return-route evaluation. Missing applicable endpoint/return-route safeguards under configured forced tunneling are requirement gaps, not confirmed outage causes. SQL applies to the primary region; Event Hubs depends on use; maintained firewall alternatives remain valid. |
+| [External VNet routing](https://learn.microsoft.com/azure/api-management/api-management-using-with-vnet#routing) | Classic external/internal routing guidance | Strong proactive endpoint recommendation; default UDR and global ApiManagement Internet return-route evaluation. Missing endpoints under forced tunneling require review of supported firewall alternatives, not an inferred failure. SQL applies to the primary region; Event Hubs depends on use. |
 | [Internal VNet DNS](https://learn.microsoft.com/azure/api-management/api-management-using-with-internal-vnet#dns-configuration) | Classic internal | Custom/private DNS is necessary; configuration does not prove resolution. No workstation DNS result is presented as APIM evidence. |
 | [Premium v2 injection](https://learn.microsoft.com/azure/api-management/inject-vnet-v2) | Premium v2 only | Dedicated subnet, /27 minimum, /24 recommendation, hostingEnvironments delegation, NSG and Key Vault 443, private inbound DNS. Dedicated occupancy and actual DNS resolution remain unknown. |
 | [Network status REST API](https://learn.microsoft.com/rest/api/apimanagement/network-status/list-by-service?view=rest-apimanagement-2024-05-01) | Availability discovered at runtime | GET returns a bare array of locations, each with `networkStatus.connectivityStatus`; freshness and `isOptional` matter. Missing/unsupported API is unknown, especially for v2, not a fallback to classic assumptions. |
@@ -17,7 +17,7 @@ Reviewed 2026-10-14 using current Microsoft documentation. These are versioned r
 - Classic regional dependency tags must include both the deployment region and the primary region. This checker evaluates those separately instead of treating a regional tag as global.
 - Premium v2 subnet-sizing examples mix total usable-address and allocation figures. This version uses the explicit /27 minimum and /24 recommendation, not the example table to assert available scale headroom. It does not reuse classic address arithmetic for Premium v2.
 - HTTP ingress on 80 depends on intended client access; this version checks external HTTPS 443 and does not require HTTP as a universal healthy-service condition.
-- Recommend applicable service endpoints before future VNet changes, even without current forced tunneling. Under forced tunneling, their absence is a required safeguard gap unless a maintained firewall alternative is independently verified. Do not call that gap a proven outage or claim endpoints are the only supported solution.
+- Recommend applicable endpoints before future VNet changes. With forced tunneling, the collector does not inspect the supported maintained firewall alternative, so missing endpoints are `Needs review`, not a demonstrated failure. Updating/unknown endpoint provisioning is also `Needs review`; only explicit Failed establishes a provisioning failure.
 - The classic ApiManagement service-tag Internet UDR preserves symmetric replies to inbound management traffic. It is distinct from the NSG inbound TCP 3443 permit. Regional tags or more-specific IP routes need complete coverage/effective-route evidence; Premium v2 does not inherit the classic requirement.
 - Native dependency failures are evidence of a failing dependency path, not proof of which NSG, route, DNS server or firewall caused it.
 - Current classic internal DNS guidance warns against an authoritative zone for the apex `azure-api.net`; scope records/zones to the instance's exact endpoint hostnames. This version does not discover DNS zone ownership and reports DNS resolution as unknown.
@@ -45,6 +45,7 @@ Digests use UTF-8 rule text with LF-normalized line endings.
 | 0.3.1 | `dadd0a5da8c520eb85a7521674c3a85b622f3a4658a44af6ace51bbf7d022b46` |
 | 0.3.2 | `2e7033ae04eda1b6e8eed3866c1e0b7939555f1cb9c25d76d9588b4f08c23908` |
 | 0.3.3 | `e4bb846ac6e3a359d4b864fa399faee732e665259e9493aef6741f1a85f31f9a` |
+| 0.4.0 | `8bdb41a6611f38a0297151c4a8bbd2676e80c8577642b37ed93d9e58e2cba642` |
 
 Version 0.2.2 treats a configured discard default UDR as a configuration issue,
 without claiming every flow is affected. Endpoint and management return-route
@@ -71,3 +72,9 @@ peering/gateway-transit/BGP and more-specific-route limitations.
 Version 0.3.3 shows every collected Network status observation directly in an
 unfiltered connection table. Reported connectivity and freshness stay distinct;
 Azure Portal is supplementary for raw errors and newer observations.
+
+Version 0.4.0 corrects reproduced endpoint classifications and adds
+complete-package fingerprints, safe phase diagnostics and per-read collection
+intervals/ETag digests. These do not establish atomic Azure snapshots or live
+platform certification. The catalog digest remains the rule-source digest;
+the execution record references diagnostics for the full package identity.

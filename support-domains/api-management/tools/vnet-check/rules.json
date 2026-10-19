@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "version": "0.3.3",
+  "version": "0.4.0",
   "status": "candidate",
   "valueProof": "unproven",
-  "reviewedAt": "2026-10-14",
+  "reviewedAt": "2026-10-19",
   "sources": {
     "classicSubnet": "https://learn.microsoft.com/azure/api-management/virtual-network-injection-resources",
     "classicNetwork": "https://learn.microsoft.com/azure/api-management/virtual-network-reference",
@@ -16,7 +16,7 @@
     { "id": "discovery", "title": "Service and network model", "pattern": "^network-model$", "coverage": "Automated discovery", "source": "premiumV2", "nextStep": "Confirm the discovered SKU and injection mode match the intended topology." },
     { "id": "subnet", "title": "Subnet, placement and capacity", "pattern": "^(region-placement|subscription-placement|delegation|subnet-|free-address-capacity)", "coverage": "Partial: actual free IPs, dedicated occupancy and upgrade headroom require corroboration", "source": "classicSubnet", "nextStep": "Compare subnet placement, delegation and capacity with the SKU-specific requirements; verify allocation and upgrade headroom separately." },
     { "id": "nsg", "title": "NSG rules", "pattern": "^nsg-", "coverage": "Ordered rule evaluation; unresolved service-tag or ASG overlap remains unknown", "source": "classicNetwork", "nextStep": "Inspect the identified rule priority and required flow. Do not add a rule until earlier matches and intended policy are understood." },
-    { "id": "service-endpoints", "title": "Service endpoints", "pattern": "^service-endpoint-", "coverage": "Proactive classic endpoint recommendations; required safeguard gaps under forced tunneling; firewall alternatives and optional Event Hubs use require corroboration", "source": "classicRouting", "nextStep": "Recommend endpoints from the start to protect dependencies against later VNet changes. With forced tunneling, missing applicable endpoints are required safeguard gaps unless a maintained firewall alternative is verified; not proof of an outage." },
+    { "id": "service-endpoints", "title": "Service endpoints", "pattern": "^service-endpoint-", "coverage": "Classic endpoint presence and provisioning; missing endpoints under forced tunneling require firewall/connectivity corroboration, not an inferred failure", "source": "classicRouting", "nextStep": "Recommend endpoints proactively. With forced tunneling, inspect endpoint provisioning and the supported firewall alternative before declaring a dependency fault. An in-progress or unavailable provisioning state needs review; explicit provisioning Failed is a configuration failure." },
     { "id": "routing", "title": "Routes and forced tunneling", "pattern": "^(effective-routing|management-return-path)$", "coverage": "Default UDR next-hop classification and classic ApiManagement -> Internet service-tag safeguard; effective BGP, regional-tag coverage and firewall paths remain unverified", "source": "classicRouting", "nextStep": "Verify effective routes and symmetric control-plane return paths. Recommend an ApiManagement service-tag Internet UDR proactively; it is required with forced tunneling. Keep this separate from NSG TCP 3443 permission." },
     { "id": "dns", "title": "DNS and name resolution", "pattern": "^(custom-dns-|dns-)", "coverage": "Configured resolver ports only; no DNS answers or resolver logs collected", "source": "internalDns", "nextStep": "If an actual DNS symptom is reported, obtain approved resolver/client-path evidence. This VNet configuration check does not establish DNS answers." },
     { "id": "native-status", "title": "APIM network connection status", "pattern": "^native-", "coverage": "All collected Azure Network status observations shown unfiltered: reported connectivity, requirement, original UTC timestamps and freshness at capture", "source": "networkStatus", "nextStep": "Use the connection table in this report first. Azure Portal Network status is supplementary for current error details or newer observations, not a prerequisite for viewing the captured statuses." },

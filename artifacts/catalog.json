@@ -108,16 +108,16 @@
     },
     {
       "id": "apim.vnet-check",
-      "version": "0.3.3",
+      "version": "0.4.0",
       "kind": "cli-workflow",
       "executionMode": "read-only",
       "status": "candidate",
       "valueProof": "unproven",
-      "description": "Data-backed APIM VNet assessment: collected findings only, compact coverage limits, concrete preventive route-table settings and rationale, scoped resource links/GHC planning handoffs and platform observation provenance.",
+      "description": "Read-only APIM VNet assessment with evidence-correct endpoint classifications, complete executed-package fingerprints, safe phase diagnostics, per-read timing/version evidence and private customer reports.",
       "intents": ["run all read-only APIM VNet checks", "generate and analyze sectioned APIM networking HTML reports"],
       "source": {
         "path": "../support-domains/api-management/tools/vnet-check/rules.json",
-        "sha256": "e4bb846ac6e3a359d4b864fa399faee732e665259e9493aef6741f1a85f31f9a",
+        "sha256": "8bdb41a6611f38a0297151c4a8bbd2676e80c8577642b37ed93d9e58e2cba642",
         "entryPoint": "support-domains/api-management/tools/vnet-check/Test-ApimVnet.ps1"
       },
       "compatibility": {
@@ -144,9 +144,9 @@
       ],
       "validation": {
         "level": "static",
-        "lastValidatedAt": "2026-10-14",
+        "lastValidatedAt": "2026-10-19",
         "expiresAt": null,
-        "methods": ["offline SKU, NSG, endpoint, forced-tunnel safeguard, UTC, private support-inventory and command-contract tests", "mocked collector, authentication preflight and scope guards", "scoped classic live read-only collection"],
+        "methods": ["offline endpoint state/counterexample, SKU, NSG, UTC, report and package-provenance tests", "mocked collector timing/ETag evidence, authentication preflight and scope guards", "safe successful/failed entrypoint diagnostic checks; live controlled comparisons remain pending"],
         "evidenceRefs": ["support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1", "support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Collector.Tests.ps1", "support-domains/api-management/tools/vnet-check/COPILOT.md"]
       },
       "reuse": {
@@ -206,7 +206,7 @@
       },
       "owners": ["AzureIQ APIM support domain"],
       "supersedes": [],
-      "supersededBy": "apim.vnet-check@0.3.3"
+      "supersededBy": "apim.vnet-check@0.4.0"
     },
     {
       "id": "azure.resource-group.ensure",

@@ -13,7 +13,7 @@ $configDirectory = Join-Path $fixtureRoot 'config'
 $null = New-Item -ItemType Directory -Path $configDirectory -Force
 $profilePath = Join-Path $configDirectory 'azureiq.yaml'
 $configPath = Join-Path $configDirectory 'local.azureiq.json'
-$fakeCliPath = Join-Path $fixtureRoot 'fake az.cmd'
+$fakeCliPath = Join-Path $fixtureRoot $(if ($IsWindows) { 'fake az.cmd' } else { 'fake az' })
 $script:assertions = 0
 function Check {
     param([bool]$Value, [string]$Description)
@@ -36,7 +36,7 @@ $nsgId = "$baseId/Microsoft.Network/networkSecurityGroups/example"
 $routesId = "$baseId/Microsoft.Network/routeTables/example"
 $responses = @{
     (Get-ApimReadUri $serviceId $subscription) = @{
-        id = $serviceId; location = 'eastus'; sku = @{ name = 'Premium'; capacity = 1 }
+        id = $serviceId; etag = 'private-version-label'; location = 'eastus'; sku = @{ name = 'Premium'; capacity = 1 }
         properties = @{ virtualNetworkType = 'Internal'; virtualNetworkConfiguration = @{ subnetResourceId = $subnetId }; additionalLocations = @() }
     }
     (Get-ApimReadUri $subnetId $subscription) = @{
@@ -102,6 +102,11 @@ try {
     Check ($state.Writes -eq 0) 'Only account show and ARM GET commands are issued'
     Check ($snapshot.regions.Count -eq 1 -and $null -ne $snapshot.regions[0].routeTable) 'Subnet references are followed for route evidence'
     Check ($snapshot.nativeNetworkStatus.locations.Count -eq 2) 'Native status bare-array response is preserved'
+    $collection = $snapshot.collectionEvidence
+    Check ($collection.transport -eq 'azure-cli-arm-get' -and $collection.reads.Count -eq 6) 'Collection declares its transport and every attempted resource read'
+    Check (@($collection.reads | Where-Object { $_.startedAt -gt $_.completedAt -or $_.apiVersion -ne '2024-05-01' }).Count -eq 0) 'Each read preserves a bounded observation interval and API version'
+    Check ($collection.reads[0].etagDigest -match '^[a-f0-9]{64}$' -and $collection.consistency -match 'not an atomic snapshot') 'Returned ETags are fingerprinted without claiming cross-resource consistency'
+    Check (($collection | ConvertTo-Json -Depth 10) -notmatch 'private-version-label|00000000-|example-reader|/subscriptions/') 'Sanitized collection evidence does not leak ETags, identity or resource paths'
     $assessment = Invoke-ApimVnetAssessment $snapshot
     $overview = Get-ApimVnetTargetOverview -Snapshot $snapshot -Report $assessment -IncludePrivateDetails
     Check ($overview.serviceName -eq 'example' -and $overview.resourceGroup -eq 'example' -and $overview.skuName -eq 'Premium' -and $overview.capacity -eq 1) 'Collector responses identify the real target and SKU in the private projection'
@@ -122,6 +127,7 @@ try {
     $state.Failure = 'ACCESS_DENIED'
     $snapshot = Get-ApimVnetSnapshot -WorkspaceRoot $fixtureRoot -ServiceName example -ResourceGroup example
     Check ($null -eq $snapshot.regions[0].networkSecurityGroup -and 'NETWORK_RULE_ACCESS_DENIED' -in $snapshot.regions[0].evidenceGaps) 'Denied NSG read preserves attached reference and gap category'
+    Check (@($snapshot.collectionEvidence.reads | Where-Object { $_.resourceKind -eq 'networkSecurityGroup' -and $_.status -eq 'ACCESS_DENIED' }).Count -eq 1) 'Optional read failure retains a safe operation result in collection diagnostics'
     $service = $responses[(Get-ApimReadUri $serviceId $subscription)]
     $service.sku.name = 'PremiumV2'
     $responses[(Get-ApimReadUri $subnetId $subscription)].properties.delegations = @(@{ properties = @{ serviceName = 'Microsoft.Web/hostingEnvironments' } })
@@ -136,7 +142,7 @@ try {
     try { Get-ApimVnetSnapshot -WorkspaceRoot $fixtureRoot -ServiceName example -ResourceGroup example | Out-Null }
     catch { $errorCategory = $_.Exception.Message }
     Check ($errorCategory -eq 'SCOPE_MISMATCH' -and $state.ResourceReads -eq 1) 'Mid-run scope drift stops before the next resource read'
-    if ($IsWindows) {
+    if ($IsWindows -or $IsLinux) {
         Import-Module (Join-Path $toolRoot 'ApimVnet.Collector.psm1') -Force
         $module = Get-Module 'ApimVnet.Collector'
         & $module {
@@ -148,16 +154,24 @@ try {
                 return @(@{ Source = $script:fakeCliPath }, @{ Source = 'non-executable-companion' })
             }
         } $fakeCliPath
-        "@echo off`necho {`"ok`":true}`n" | Set-Content -LiteralPath $fakeCliPath -Encoding ascii
+        $successScript = if ($IsWindows) { "@echo off`necho {`"ok`":true}`n" } else { "#!/bin/sh`nprintf '%s\n' '{`"ok`":true}'`n" }
+        $successScript | Set-Content -LiteralPath $fakeCliPath -Encoding ascii -NoNewline
+        if ($IsLinux) {
+            [System.IO.File]::SetUnixFileMode($fakeCliPath,
+                [System.IO.UnixFileMode]::UserRead -bor [System.IO.UnixFileMode]::UserWrite -bor [System.IO.UnixFileMode]::UserExecute)
+        }
         $response = & $module { Invoke-ReaderCli @('account', 'show') }
-        Check ($response.ok -eq $true) 'Windows cmd wrapper selects the first CLI match and executes a spaced path without Azure access'
-        "@echo off`necho AuthorizationFailed private-detail 1>&2`nexit /b 1`n" | Set-Content -LiteralPath $fakeCliPath -Encoding ascii
+        Check ($response.ok -eq $true) 'Native launcher selects the first CLI match and executes a spaced path without Azure access'
+        $errorScript = if ($IsWindows) { "@echo off`necho AuthorizationFailed private-detail 1>&2`nexit /b 1`n" } else { "#!/bin/sh`nprintf '%s\n' 'AuthorizationFailed private-detail' >&2`nexit 1`n" }
+        $errorScript | Set-Content -LiteralPath $fakeCliPath -Encoding ascii -NoNewline
         $errorCategory = $null
         try { & $module { Invoke-ReaderCli @('account', 'show') } | Out-Null } catch { $errorCategory = $_.Exception.Message }
         Check ($errorCategory -eq 'ACCESS_DENIED') 'Native stderr is categorized without exposing private detail'
-        $errorCategory = $null
-        try { & $module { Invoke-ReaderCli @('account', 'show', '%PATH%') } | Out-Null } catch { $errorCategory = $_.Exception.Message }
-        Check ($errorCategory -eq 'CLI_ARGUMENT_NOT_ALLOWED') 'Windows shell expansion is rejected before process execution'
+        if ($IsWindows) {
+            $errorCategory = $null
+            try { & $module { Invoke-ReaderCli @('account', 'show', '%PATH%') } | Out-Null } catch { $errorCategory = $_.Exception.Message }
+            Check ($errorCategory -eq 'CLI_ARGUMENT_NOT_ALLOWED') 'Windows shell expansion is rejected before process execution'
+        }
     }
 } finally {
     Import-Module (Join-Path $toolRoot 'ApimVnet.Collector.psm1') -Force
