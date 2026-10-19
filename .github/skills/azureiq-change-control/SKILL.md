@@ -11,6 +11,30 @@ Use this workflow for every Azure mutation, whether performed through MCP, IaC, 
 
 ## Execution Adapters
 
+First use an existing working Azure MCP/extension subcommand supporting the
+approved operation and scope. Custom adapters below are fallbacks, not the
+default merely because they exist. Diagnose authentication/argument failures
+separately from capability gaps. Do not build or extend an executor during a
+routine Azure change without separate explicit tool-development authorization.
+
+When a supported MCP path is unavailable, the existing fallback for classic APIM subnet service endpoints is the
+[controlled CLI workflow](../../../docs/subnet-service-endpoint-changes.md).
+It admits only a cataloged argument-array recipe for the maintained subnet
+update command, pins CLI version/executable and same SDK/CLI identity, and
+requires an empty initial endpoint set plus immediate R3 approval. Do not use
+the observability REST lane to replace a subnet or execute a free-form shell
+command. Event Hubs is not implied when only the core endpoints are applicable.
+
+For APIM logging, alerts, and subscription Activity Log export, a fixed
+catalog-bound ARM lane is available. Follow
+[the observability change workflow](../../../docs/observability-changes.md).
+`change validate`, `plan`, `verify`, and `rollback-plan` do not mutate Azure.
+`change approve` records an exact user decision obtained outside the CLI;
+it must never be used to self-approve. `change apply-approved` checks supervised
+policy, scope/principal/source/state drift, expiry and one-use execution.
+Rollback is a fresh, separately approved plan. All packages remain candidate
+until live verification; configuration readback does not replace the verifier.
+
 Use an existing, tested AzureIQ CLI operation when Azure MCP does not expose the required mutation. For Resource Group create-or-verify operations, invoke the shared execution host:
 
 ```powershell
@@ -22,7 +46,7 @@ The host reads exact tenant/subscription scope only from ignored `config/local.a
 
 Do not fall back to interactive portal automation or ask for another login when a tested CLI operation supports the approved action. Add an operation to the shared host only after confirming the MCP/extension gap. Do not create a resource-specific script or executable. Keep authentication, scope validation, idempotency, sanitized output, dry run, and independent verification in the shared host.
 
-When no tested operation exists, follow [the coding-engine contract](../../../docs/coding-engine.md). GHC may generate a candidate Bicep/ARM package or constrained CLI/REST recipe, but it cannot execute arbitrary generated shell or SDK code with Azure credentials. The fixed engine must validate, plan, bind approval, execute, record, and verify the exact package digest.
+When no safe existing operation exists, report the concrete blocker and propose separate tool work. Only with tool-development authorization, follow [the coding-engine contract](../../../docs/coding-engine.md) to create a candidate package. Ordinary parameterization of existing approved templates/recipes does not require developing a new tool. Generated arbitrary shell or SDK code must not execute with Azure credentials.
 
 ## Approval Semantics
 

@@ -33,12 +33,12 @@ Load relevant AzureIQ skills and the matching support domain automatically. A re
 
 ## Resolve Capabilities
 
-1. Search the live tool descriptions supplied by Azure MCP and installed extensions.
+1. Search the live tool descriptions supplied by Azure MCP and installed extensions, inspect the matching subcommand schema, and use an existing working tool with explicit parameters.
 2. Read `capabilities/registry.json` and match the user intent against any routing overlay.
-3. Use the overlay to apply known limitations, required evidence, fallback, maturity, and verification without replacing the live tool catalog.
+3. Use the overlay to apply known limitations, required evidence, fallback, maturity, and verification without replacing the live tool catalog. A suitable working MCP operation takes precedence over a custom adapter listed in an overlay.
 4. Search `artifacts/catalog.json` by intent. Reject retired/deprecated, incompatible, expired, digest-mismatched, or `no-value` assets. Prefer exact parameterization of the newest compatible validated/approved version.
 5. Resolve catalog decision points. Infer advisory choices only from an unambiguous current standard or authoritative live state. For approval/blocker decisions, provide a recommendation and tradeoff, then ask the user.
-6. If no artifact fits, follow `docs/coding-engine.md`: generate the smallest bounded package under ignored `.azureiq/generated/`, validate it without Azure credentials, and catalog it as a candidate before mutation. A changed requirement creates a new semantic version; do not edit an approved version in place.
+6. Distinguish authentication, scope, parameter, permission and transient failures from absent capability. If no safe existing path fits, state the blocker and propose separate tool development. Do not generate, compile or extend execution tools during a routine service operation unless the user separately authorizes that development. When authorized, follow `docs/coding-engine.md`, validate without Azure credentials and catalog candidates before use; never alter approved artifacts in place.
 7. Invoke the selected live MCP/extension tool in the Orchestrator when a hidden specialist's restricted tool list does not include it. Pass the specialist minimized structured evidence for analysis; do not broaden specialist permissions merely for convenience.
 8. Load referenced skills and support domains only when relevant.
 9. For an AzureIQ CLI route, run `operations list`, require an exact registered operation, and pass explicit parameters from the approved action manifest. If no operation exists, do not execute an ad hoc shell command; use a validated candidate package and fixed execution lane or stop for a safe engine gap.

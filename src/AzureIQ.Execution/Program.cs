@@ -7,6 +7,7 @@ using Azure.Identity;
 using Azure.Identity.Broker;
 using Azure.ResourceManager;
 using Azure.ResourceManager.Resources;
+using AzureIQ.Execution;
 
 return await ProgramEntry.RunAsync(args);
 
@@ -24,6 +25,11 @@ internal static class ProgramEntry
             {
                 Console.WriteLine(OperationCatalog.ReadJson());
                 return 0;
+            }
+
+            if (args.FirstOrDefault() == "change")
+            {
+                return await ArmChangeCommand.RunAsync(args[1..]);
             }
 
             CommandOptions options = CommandOptions.Parse(args);
@@ -237,6 +243,7 @@ internal sealed record LocalConfiguration(string Mode, ScopeConfiguration Scope,
             stream,
             ProgramEntry.JsonOptions) ?? throw new InvalidOperationException("Private AzureIQ configuration is invalid.");
 
+        configuration.ValidateForRead();
         PrivateValues.Add(configuration.Scope.TenantId);
         foreach (string subscriptionId in configuration.Scope.SubscriptionIds)
         {
@@ -247,6 +254,7 @@ internal sealed record LocalConfiguration(string Mode, ScopeConfiguration Scope,
 
     public void ValidateForSupervisedExecution()
     {
+        ValidateForRead();
         if (!string.Equals(Mode, "supervised-management", StringComparison.Ordinal) ||
             !string.Equals(Safety.AzureWrites, "supervised", StringComparison.Ordinal))
         {
@@ -256,23 +264,41 @@ internal sealed record LocalConfiguration(string Mode, ScopeConfiguration Scope,
         {
             throw new InvalidOperationException("Exact-scope and explicit-approval controls are required.");
         }
-        if (Safety.AutomaticRiskTiers.Count != 0)
+        if (Safety.AutomaticRiskTiers is { Count: > 0 })
         {
             throw new InvalidOperationException("Automatic execution is not permitted during initial supervised management.");
         }
-        if (Scope.SubscriptionIds.Count != 1)
+    }
+
+    public void ValidateForRead()
+    {
+        if (Mode is not ("bootstrap-read-only" or "supervised-management") ||
+            Scope is null || Safety is null ||
+            Scope.SubscriptionIds is not { Count: 1 } ||
+            !Guid.TryParse(Scope.TenantId, out Guid tenant) || tenant == Guid.Empty ||
+            !Guid.TryParse(Scope.SubscriptionIds[0], out Guid subscription) || subscription == Guid.Empty ||
+            Scope.ExcludedSubscriptionIds?.Contains(Scope.SubscriptionIds[0], StringComparer.OrdinalIgnoreCase) == true)
         {
-            throw new InvalidOperationException("Exactly one private subscription scope is required.");
+            throw new InvalidOperationException("One valid, non-excluded private tenant/subscription scope is required.");
         }
-        _ = TenantId;
-        _ = SubscriptionId;
+        if (!Safety.RequireExactScope || !Safety.RequireExplicitApproval)
+        {
+            throw new InvalidOperationException("Exact-scope and explicit-approval controls are required.");
+        }
+        if (Safety.ApprovalExpiresAfterMinutes is < 1 or > 30)
+        {
+            throw new InvalidOperationException("Approval lifetime must be between one and thirty minutes.");
+        }
     }
 }
 
-internal sealed record ScopeConfiguration(string TenantId, IReadOnlyList<string> SubscriptionIds);
+internal sealed record ScopeConfiguration(
+    string TenantId, IReadOnlyList<string> SubscriptionIds, IReadOnlyList<string>? ExcludedSubscriptionIds = null);
 
 internal sealed record SafetyConfiguration(
     string AzureWrites,
-    bool RequireExactScope,
-    bool RequireExplicitApproval,
-    IReadOnlyList<string> AutomaticRiskTiers);
+    bool RequireExactScope = true,
+    bool RequireExplicitApproval = true,
+    IReadOnlyList<string>? AutomaticRiskTiers = null,
+    int ApprovalExpiresAfterMinutes = 30,
+    IReadOnlyList<string>? PermittedSupervisedRiskTiers = null);

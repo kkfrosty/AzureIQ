@@ -13,3 +13,8 @@ The catalog complements rather than replaces:
 Generated content begins as `candidate`. GHC must search this catalog before generating a new asset. It may reuse a compatible `validated` or `approved` version, adapt a draft with explicit revalidation, or create a new candidate version when conditions differ. It must never silently edit an approved version in place.
 
 Customer identifiers, environment bindings, secrets, deployment parameters, and raw evidence do not belong here. Store private bindings in ignored local configuration or approved Azure services such as Key Vault.
+
+Versioned operation contracts under `versions/` preserve the exact previously
+validated bytes when the shared discovery catalog gains unrelated operations.
+The Resource Group 1.0.0 contract retains its original digest and evidence;
+that evidence does not validate the new observability executor or packages.

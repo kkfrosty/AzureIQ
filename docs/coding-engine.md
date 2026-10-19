@@ -18,6 +18,15 @@ User outcome
 
 AzureIQ must not generate local code merely because a tool call failed once. It first determines whether the failure is bad parameters, authentication, transient service state, missing telemetry, unsupported capability, or an actual tool gap.
 
+The coding engine is a separately authorized development path, not the default
+response to an operational tool failure. During routine service requests,
+orchestrate working MCP/extension tools or an already available approved
+fallback. If neither is safe, report the gap and propose tool development
+separately. Do not put new adapter generation, compilation and regression
+development on the service operation's critical path without the user's
+explicit tool-development request. Existing template/recipe parameterization
+does not constitute building a new executor.
+
 ## Operation Package
 
 GHC writes a candidate under ignored `.azureiq/generated/<run-id>/`. A package contains no secrets or customer scope identifiers and includes:
@@ -107,7 +116,12 @@ Generated arbitrary PowerShell/Python/C# must never run directly with Contributo
 
 ## GitHub Copilot Integration
 
-Today GHC uses terminal tools to call the shared CLI after consulting live tools, `capabilities/registry.json`, `artifacts/catalog.json`, and `operations list`. The generic package engine is not implemented yet.
+Today GHC uses terminal tools to call the shared CLI after consulting live tools, `capabilities/registry.json`, `artifacts/catalog.json`, and `operations list`. The full generic package engine is not implemented yet. A narrow [observability change lane](observability-changes.md) implements catalog-bound ARM requests, private plans, approval digests, drift checks, readback, and rollback without claiming the generic deployment/what-if/plugin lanes.
+
+The [subnet endpoint workflow](subnet-service-endpoint-changes.md) adds one
+admitted CLI command family using argument arrays, a pinned executable/version,
+same-principal SDK/CLI checks and the same plan/approval ledger. It is not an
+unrestricted CLI execution facility.
 
 When package validation and several stable operations exist, expose the same engine through a local MCP server with tools such as:
 

@@ -7,10 +7,16 @@ AzureIQ uses the smallest supported execution surface for each operation. Local 
 1. Use an installed Azure MCP tool when it exposes the required read or mutation with suitable parameters.
 2. Use an installed Azure service skill or extension when it provides a supported, repeatable operation.
 3. Use declarative Bicep or Terraform for repeatable service topologies and configuration.
-4. For a proven gap, have GHC generate a bounded candidate operation package for the AzureIQ coding engine. Prefer generic declarative deployment over handwritten resource-specific SDK code.
-5. Use direct ARM REST or supervised browser interaction only when no maintained path exists.
+4. Reuse an existing registered and compatible fallback when the supported MCP/extension path is unavailable.
+5. If no safe existing path exists, report the blocker and propose separate tool development. New adapters/executables are not part of routine operation unless separately authorized; parameterizing existing templates/recipes remains normal deployment work.
+6. Use direct ARM REST or supervised browser interaction only through a supported approved path when no maintained tool can complete the operation.
 
 Do not duplicate a working MCP operation locally merely to standardize syntax. AzureIQ-specific value should be customer scope, missing mutation coverage, safety checks, idempotency, validation, evidence, or verification.
+
+Authentication, tenant/scope, input and transient errors are availability or
+invocation problems, not proof that Azure MCP lacks the capability. Record the
+specific failure, use a bounded supported recovery or existing fallback, and
+avoid spending the user's service-change window building replacement tooling.
 
 ## Shared CLI
 
@@ -29,6 +35,17 @@ Current operation:
 ```powershell
 dotnet run --project ./src/AzureIQ.Execution --configuration Release --no-restore -- resource-group ensure --name '<name>' --location '<region>' --what-if
 ```
+
+The fixed `change` commands now support narrowly scoped observability updates:
+`validate`, `plan`, `approve`, `apply-approved`, `verify`, and `rollback-plan`.
+Follow [the change workflow](observability-changes.md); do not confuse the
+read-only planning commands with write authorization or configuration readback
+with independent operational verification. These commands do not commission
+write access or execute arbitrary generated scripts.
+
+They also admit [classic APIM subnet endpoint initialization](subnet-service-endpoint-changes.md)
+through the maintained Azure CLI, using the same digest-bound approvals and
+separately approved rollback. Existing endpoint sets are not replaced.
 
 GitHub Copilot discovers this command through the always-on instructions and change-control skill, then passes explicit parameters through the terminal tool. The output is JSON so the agent can validate it without parsing prose.
 

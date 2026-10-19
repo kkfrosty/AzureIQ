@@ -15,6 +15,58 @@
   },
   "capabilities": [
     {
+      "id": "network.subnet-service-endpoints.change",
+      "intents": ["enable recommended service endpoints on an APIM subnet", "implement APIM service endpoint recommendations"],
+      "owner": "composite", "status": "draft", "valueProof": "unproven",
+      "primary": { "kind": "composite", "selector": "live Azure MCP/extension tool discovery", "operation": "Use a working exact subnet operation with the approved parameters; diagnose authentication/argument failures before declaring a capability gap" },
+      "limitations": [
+        "Initial endpoint set must be empty; this recipe does not replace existing custom endpoint configuration.",
+        "Maintained Azure CLI performs a bounded subnet update; no bare subnet ARM replacement or deletion is admitted.",
+        "Service IP identity and routes change and active TCP connections can reset.",
+        "Local locking and before-state checks do not provide atomic protection against external writers.",
+        "Event Hubs is excluded unless a separately planned use case requires it; candidate live validation pending."
+      ],
+      "requiredEvidence": [
+        "Private scope, same SDK/CLI principal, pinned executable/version and declared R3 approval",
+        "Classic APIM subnet membership, existing empty endpoint set and current before-state",
+        "Preserved prefix, NSG, route table, delegations and private policies",
+        "Exact command arguments, source digest, rollback and connectivity observation criteria"
+      ],
+      "fallback": { "kind": "azureiq-cli", "selector": "src/AzureIQ.Execution", "operation": "change plan" },
+      "verification": ["Read endpoint services and provisioning state independently.", "Rerun the read-only VNet checker and distinguish fresh post-change dependencies from cached probes.", "No test traffic or rollback without explicit authorization."],
+      "references": ["../docs/subnet-service-endpoint-changes.md", "../artifacts/networking/subnet-core-service-endpoints.json"]
+    },
+    {
+      "id": "azure.observability.change",
+      "intents": ["implement APIM gateway logging", "configure APIM observability alerts", "enable subscription Activity Log export", "apply an approved observability change", "roll back an observability change"],
+      "owner": "composite",
+      "status": "draft",
+      "valueProof": "unproven",
+      "primary": { "kind": "composite", "selector": "live Azure MCP/extension tool discovery", "operation": "Use a working exact observability operation with approved parameters before selecting the custom fallback" },
+      "limitations": [
+        "Fixed fallback after installed tools/IaC; no arbitrary generated scripts or HTTP targets.",
+        "Candidate packages have offline/static evidence only, not live provider, notification or rollback certification.",
+        "Explicit private write deny remains a commissioning blocker; change intent is not blanket approval.",
+        "ETag enforcement depends on provider support; local locking cannot control external writers.",
+        "Telemetry-health package checks gateway-log export, not Application Insights delivery."
+      ],
+      "requiredEvidence": [
+        "Task intent distinguished from troubleshooting and workspace authorization",
+        "Exact target, supported SKU/categories/metric/schema and approved thresholds/destinations",
+        "Fresh catalog source digest, private scope/principal binding and before-state",
+        "Human action manifest and explicit approval of the returned plan digest",
+        "Supervised write policy and effective least-privilege rights",
+        "Single-use attempt/audit records, readback and separately approved rollback"
+      ],
+      "fallback": { "kind": "azureiq-cli", "selector": "src/AzureIQ.Execution", "operation": "change plan" },
+      "verification": [
+        "Run offline executor and package regressions without Azure credentials.",
+        "Independent verifier checks actual ingestion, alert outcomes, approved notification tests and absence of regressions.",
+        "Promote only after disposable live create/update/restore/delete rollback tests."
+      ],
+      "references": ["../docs/observability-changes.md", "../src/AzureIQ.Execution/operations.json"]
+    },
+    {
       "id": "apim.vnet-configuration.assess",
       "intents": ["check VNet-injected APIM configuration", "identify APIM subnet, NSG, DNS and routing evidence gaps", "run all APIM network checks and generate an HTML report", "analyze APIM networking section by section"],
       "owner": "composite",

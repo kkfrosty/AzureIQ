@@ -1,0 +1,26 @@
+{
+  "id": "observability.apim-gateway-logs",
+  "version": "0.1.0",
+  "summary": "Export APIM gateway logs and metrics to the explicitly chosen workspace. No APIM policy, body logging, identity, or network change.",
+  "verification": "Independently send approved benign traffic from an authorized client, confirm ApiManagementGatewayLogs and AzureMetrics ingestion, check payload privacy, and allow for ingestion delay.",
+  "parameters": {
+    "resourceGroup": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "serviceName": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,49}$" },
+    "settingName": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "workspaceResourceId": { "type": "string", "pattern": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[A-Za-z0-9_.()-]{1,90}/providers/Microsoft\\.OperationalInsights/workspaces/[A-Za-z0-9-]{1,63}$" }
+  },
+  "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.ApiManagement/service/{{serviceName}}/providers/Microsoft.Insights/diagnosticSettings/{{settingName}}",
+  "apiVersion": "2021-05-01-preview",
+  "checks": [
+    { "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.ApiManagement/service/{{serviceName}}", "apiVersion": "2024-05-01", "expected": { "properties": { "provisioningState": "Succeeded" } } },
+    { "target": "{{workspaceResourceId}}", "apiVersion": "2022-10-01", "expected": {} }
+  ],
+  "body": {
+    "properties": {
+      "workspaceId": "{{workspaceResourceId}}",
+      "logAnalyticsDestinationType": "Dedicated",
+      "logs": [{ "category": "GatewayLogs", "enabled": true }],
+      "metrics": [{ "category": "AllMetrics", "enabled": true }]
+    }
+  }
+}

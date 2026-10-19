@@ -17,7 +17,7 @@ This ledger is intentionally candid. It describes the environment observed on 20
 | Containers and Kubernetes | Docker and `kubectl` are installed | Local packaging and Kubernetes interaction after context and authorization checks |
 | PowerShell and Git | PowerShell 7 and Git are installed | Local scripting, validation, and version control tooling |
 | Git repository | AzureIQ is initialized on `main`; no commit existed at the latest assessment | Local history and review can begin once the bootstrap is committed and a remote/review policy is configured |
-| AzureIQ execution CLI | The .NET Azure SDK host has completed Resource Group dry-run, create, independent Resource Graph verification, and idempotency checks | Parameterized local operations for proven MCP gaps, using VS Code credentials locally and managed identity when hosted, with private scope outside Git |
+| AzureIQ execution CLI | Resource Group operations retain their live evidence; the new bounded observability ARM lane has offline safety/package tests | Targeted logging/alert changes with private scope, approval digests, drift guards, readback and rollback; see [change workflow](observability-changes.md). Observability live validation remains pending. |
 
 ## Missing or Unproven
 

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-01-01T00:10:00Z",
+  "collectionErrors": {},
+  "apiAvailable": true,
+  "service": {
+    "sku": { "name": "Developer" },
+    "identity": { "principalId": "00000000-0000-0000-0000-000000000003" }
+  },
+  "serviceDiagnostic": null,
+  "apiDiagnostic": {
+    "properties": {
+      "sampling": { "percentage": 100 },
+      "httpCorrelationProtocol": "W3C",
+      "frontend": { "request": { "body": { "bytes": 0 } }, "response": { "body": { "bytes": 0 } } },
+      "backend": { "request": { "body": { "bytes": 0 } }, "response": { "body": { "bytes": 0 } } }
+    }
+  },
+  "expectedComponentId": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/example/providers/Microsoft.Insights/components/example",
+  "logger": {
+    "properties": {
+      "loggerType": "applicationInsights",
+      "resourceId": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/example/providers/Microsoft.Insights/components/example",
+      "credentials": { "identityClientId": "{{protected-reference}}" }
+    }
+  },
+  "component": {
+    "id": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/example/providers/Microsoft.Insights/components/example",
+    "properties": { "publicNetworkAccessForIngestion": "Enabled", "DisableLocalAuth": true }
+  },
+  "workspace": { "properties": { "publicNetworkAccessForIngestion": "Enabled" } },
+  "roles": {
+    "value": [
+      {
+        "properties": {
+          "principalId": "00000000-0000-0000-0000-000000000003",
+          "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb",
+          "scope": "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/example/providers/Microsoft.Insights/components/example"
+        }
+      }
+    ]
+  },
+  "requestEvidence": {
+    "state": "Collected",
+    "expectedRequests": 20,
+    "markerSupplied": true,
+    "traceSupplied": true,
+    "startTime": "2026-01-01T00:00:00Z",
+    "endTime": "2026-01-01T00:10:00Z",
+    "observedAt": "2026-01-01T00:12:00Z",
+    "counts": {
+      "Rows": 20, "SuccessRows": 20, "Http200Rows": 20,
+      "UniqueRequests": 20, "UniqueOperations": 20, "ItemCountSum": 20, "KnownTraceRows": 1
+    }
+  }
+}

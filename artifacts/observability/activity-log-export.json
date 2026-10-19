@@ -1,0 +1,30 @@
+{
+  "id": "observability.activity-log-export",
+  "version": "0.1.0",
+  "summary": "Export subscription Activity Log to the explicitly chosen workspace. Adds ingestion cost and exports subscription-wide operational metadata.",
+  "verification": "Independently confirm the diagnostic-setting readback and arrival of new AzureActivity records; verify intended categories, destination, retention and access.",
+  "parameters": {
+    "settingName": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "workspaceResourceId": { "type": "string", "pattern": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[A-Za-z0-9_.()-]{1,90}/providers/Microsoft\\.OperationalInsights/workspaces/[A-Za-z0-9-]{1,63}$" }
+  },
+  "target": "/subscriptions/{{subscriptionId}}/providers/Microsoft.Insights/diagnosticSettings/{{settingName}}",
+  "apiVersion": "2021-05-01-preview",
+  "checks": [
+    { "target": "{{workspaceResourceId}}", "apiVersion": "2022-10-01", "expected": {} }
+  ],
+  "body": {
+    "properties": {
+      "workspaceId": "{{workspaceResourceId}}",
+      "logs": [
+        { "category": "Administrative", "enabled": true },
+        { "category": "Security", "enabled": true },
+        { "category": "ServiceHealth", "enabled": true },
+        { "category": "Alert", "enabled": true },
+        { "category": "Recommendation", "enabled": true },
+        { "category": "Policy", "enabled": true },
+        { "category": "Autoscale", "enabled": true },
+        { "category": "ResourceHealth", "enabled": true }
+      ]
+    }
+  }
+}

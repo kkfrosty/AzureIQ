@@ -1,0 +1,44 @@
+{
+  "id": "observability.apim-capacity-alert",
+  "version": "0.1.0",
+  "summary": "Create or update a classic APIM capacity metric alert using an explicitly approved threshold and existing action group. Alert evaluation has ongoing cost.",
+  "verification": "Independently confirm metric availability for the discovered SKU, effective alert scope/threshold, action-group ownership, and an approved notification test. Capacity is not supported uniformly across APIM SKUs.",
+  "parameters": {
+    "resourceGroup": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "serviceName": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,49}$" },
+    "alertName": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "threshold": { "type": "number", "minimum": 1, "maximum": 100 },
+    "actionGroupResourceId": { "type": "string", "pattern": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[A-Za-z0-9_.()-]{1,90}/providers/Microsoft\\.Insights/actionGroups/[A-Za-z0-9_.()-]{1,90}$" }
+  },
+  "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.Insights/metricAlerts/{{alertName}}",
+  "apiVersion": "2018-03-01",
+  "checks": [
+    { "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.ApiManagement/service/{{serviceName}}", "apiVersion": "2024-05-01", "expected": {}, "allowedSkuNames": ["Developer", "Premium"] },
+    { "target": "{{actionGroupResourceId}}", "apiVersion": "2023-01-01", "expected": { "properties": { "enabled": true } } }
+  ],
+  "body": {
+    "location": "global",
+    "properties": {
+      "description": "Sustained classic APIM capacity above the approved threshold",
+      "enabled": true,
+      "severity": 2,
+      "scopes": ["/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.ApiManagement/service/{{serviceName}}"],
+      "evaluationFrequency": "PT5M",
+      "windowSize": "PT15M",
+      "autoMitigate": true,
+      "criteria": {
+        "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+        "allOf": [{
+          "name": "SustainedCapacity",
+          "metricNamespace": "Microsoft.ApiManagement/service",
+          "metricName": "Capacity",
+          "operator": "GreaterThan",
+          "threshold": "{{threshold}}",
+          "timeAggregation": "Average",
+          "criterionType": "StaticThresholdCriterion"
+        }]
+      },
+      "actions": [{ "actionGroupId": "{{actionGroupResourceId}}" }]
+    }
+  }
+}

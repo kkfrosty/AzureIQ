@@ -18,5 +18,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="operations.json" LogicalName="AzureIQ.Execution.operations.json" />
+    <InternalsVisibleTo Include="AzureIQ.Execution.Tests" />
   </ItemGroup>
 </Project>

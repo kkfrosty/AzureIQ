@@ -1,0 +1,43 @@
+{
+  "id": "observability.apim-telemetry-health-alert",
+  "version": "0.1.0",
+  "summary": "Alert when exported APIM metrics show requests but gateway logs are absent for a completed observation interval. Idle traffic does not alert. Requires independent metrics and logs export to the selected workspace.",
+  "verification": "Independently validate KQL against the actual workspace schema, check idle/no-alert and traffic-with-missing-logs/alert cases, test action delivery with approval. Failure of both export streams is a documented blind spot.",
+  "parameters": {
+    "resourceGroup": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "serviceName": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,49}$" },
+    "alertName": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "location": { "type": "string", "pattern": "^[a-z][a-z0-9]{1,30}$" },
+    "workspaceResourceId": { "type": "string", "pattern": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[A-Za-z0-9_.()-]{1,90}/providers/Microsoft\\.OperationalInsights/workspaces/[A-Za-z0-9-]{1,63}$" },
+    "actionGroupResourceId": { "type": "string", "pattern": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/[A-Za-z0-9_.()-]{1,90}/providers/Microsoft\\.Insights/actionGroups/[A-Za-z0-9_.()-]{1,90}$" }
+  },
+  "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.Insights/scheduledQueryRules/{{alertName}}",
+  "apiVersion": "2023-12-01",
+  "checks": [
+    { "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.ApiManagement/service/{{serviceName}}", "apiVersion": "2024-05-01", "expected": { "properties": { "provisioningState": "Succeeded" } } },
+    { "target": "{{workspaceResourceId}}", "apiVersion": "2022-10-01", "expected": {} },
+    { "target": "{{actionGroupResourceId}}", "apiVersion": "2023-01-01", "expected": { "properties": { "enabled": true } } }
+  ],
+  "body": {
+    "location": "{{location}}",
+    "properties": {
+      "displayName": "APIM gateway log delivery gap",
+      "enabled": true,
+      "severity": 2,
+      "scopes": ["{{workspaceResourceId}}"],
+      "evaluationFrequency": "PT5M",
+      "windowSize": "PT30M",
+      "autoMitigate": true,
+      "criteria": {
+        "allOf": [{
+          "query": "let target = '/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.ApiManagement/service/{{serviceName}}'; let traffic = AzureMetrics | where TimeGenerated between (ago(30m) .. ago(10m)) | where ResourceId =~ target and MetricName == 'Requests' | summarize Requests=sum(Total); let logs = ApiManagementGatewayLogs | where TimeGenerated between (ago(30m) .. ago(10m)) | where _ResourceId =~ target | summarize Logged=count(); traffic | extend JoinKey=1 | join kind=inner (logs | extend JoinKey=1) on JoinKey | where Requests > 0 and Logged == 0 | project Requests, Logged",
+          "timeAggregation": "Count",
+          "operator": "GreaterThan",
+          "threshold": 0,
+          "failingPeriods": { "numberOfEvaluationPeriods": 1, "minFailingPeriodsToAlert": 1 }
+        }]
+      },
+      "actions": { "actionGroups": ["{{actionGroupResourceId}}"] }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "network.subnet-core-service-endpoints",
+  "version": "0.1.0",
+  "risk": "R3",
+  "summary": "Enable Microsoft.Storage, Microsoft.Sql and Microsoft.KeyVault service endpoints on one existing classic APIM subnet with an empty endpoint set. Use the maintained Azure CLI update to preserve all other subnet properties. Source IP identity and service routes change; existing TCP connections can reset.",
+  "verification": "Independently verify all three endpoint services and succeeded provisioning, unchanged subnet prefix/NSG/route/delegations/private policies, and fresh post-change APIM dependency status. Do not infer connectivity from configuration or stale probes. Rollback clears only the endpoint set and requires separate R3 approval.",
+  "parameters": {
+    "resourceGroup": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,90}$" },
+    "vnetName": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,80}$" },
+    "subnetName": { "type": "string", "pattern": "^[A-Za-z0-9_.()-]{1,80}$" },
+    "apimServiceName": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,49}$" }
+  },
+  "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.Network/virtualNetworks/{{vnetName}}/subnets/{{subnetName}}",
+  "apiVersion": "2024-05-01",
+  "checks": [
+    {
+      "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.ApiManagement/service/{{apimServiceName}}",
+      "apiVersion": "2024-05-01",
+      "expected": { "properties": { "provisioningState": "Succeeded", "virtualNetworkConfiguration": { "subnetResourceId": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.Network/virtualNetworks/{{vnetName}}/subnets/{{subnetName}}" } } },
+      "allowedSkuNames": ["Developer", "Premium"]
+    },
+    {
+      "target": "/subscriptions/{{subscriptionId}}/resourceGroups/{{resourceGroup}}/providers/Microsoft.Network/virtualNetworks/{{vnetName}}/subnets/{{subnetName}}",
+      "apiVersion": "2024-05-01",
+      "expected": { "properties": { "provisioningState": "Succeeded" } },
+      "emptyArrays": ["properties.serviceEndpoints"]
+    }
+  ],
+  "body": {
+    "properties": {
+      "serviceEndpoints": [
+        { "service": "Microsoft.Storage" },
+        { "service": "Microsoft.Sql" },
+        { "service": "Microsoft.KeyVault" }
+      ]
+    }
+  },
+  "cli": {
+    "arguments": [
+      "network", "vnet", "subnet", "update",
+      "--resource-group", "{{resourceGroup}}", "--vnet-name", "{{vnetName}}", "--name", "{{subnetName}}",
+      "--service-endpoints", "Microsoft.Storage", "Microsoft.Sql", "Microsoft.KeyVault"
+    ],
+    "rollbackArguments": [
+      "network", "vnet", "subnet", "update",
+      "--resource-group", "{{resourceGroup}}", "--vnet-name", "{{vnetName}}", "--name", "{{subnetName}}",
+      "--remove", "serviceEndpoints"
+    ]
+  }
+}

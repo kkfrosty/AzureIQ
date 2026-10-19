@@ -16,7 +16,7 @@ This document describes what exists now. [architecture.md](architecture.md) desc
 | Capability overlays | `capabilities/registry.json` | GHC matches intent after live tool discovery and applies known limits, evidence requirements, fallbacks, maturity, and verification | Initial registry available |
 | Reusable artifact memory | `artifacts/catalog.json` plus versioned source | GHC searches before generation, checks compatibility/decision points/digests, and selects or versions existing assets | Initial catalog with three assets |
 | Service knowledge | API Management support domain with KQL and unexpected-response runbook | Loaded only for relevant APIM work; augments platform evidence | Draft and value-unproven |
-| Local mutations | `src/AzureIQ.Execution`, a shared .NET Azure SDK CLI | GHC invokes registered subcommands through the terminal tool with explicit parameters and JSON output | Resource Group ensure operation proven |
+| Local mutations | `src/AzureIQ.Execution`, a shared .NET executor | Registered commands with explicit parameters and JSON output; bounded ARM observability plans, approval, apply, readback and rollback | Resource Group ensure proven; observability lane offline tested, live validation pending |
 | Local scripts | `scripts/Test-Workspace.ps1` only | CI and local structural/privacy validation; it is not an Azure mutation tool | Available |
 | Private scope | Ignored `config/local.azureiq.json` | Shared CLI and instructions use it to constrain tenant/subscription without exposing identifiers in Git | Available on this machine |
 | Change governance | Risk tiers, action-manifest schema, exact approval, rollback, and independent verification | Applied before and after every Azure mutation | Guidance plus validated schemas; no hosted policy engine |
@@ -80,7 +80,7 @@ The MCP server should be a thin transport over the same operation implementation
 - The registry has only four initial overlays and no automated synchronization with installed extension versions.
 - Hidden specialists intentionally do not receive every Azure MCP router; the Orchestrator must collect evidence from dynamic tools they lack.
 - Only Resource Group ensure has a proven local mutation path.
-- The generic generated-package coding engine and declarative validate/what-if/apply/teardown adapters are designed but not implemented. The Resource Group handler remains a proof to retire, not a pattern to multiply.
+- The full generic generated-package engine and declarative validate/what-if/apply/teardown adapters remain unimplemented. The narrower [observability ARM lane](observability-changes.md) is implemented and offline tested; it does not inherit the Resource Group handler's live evidence.
 - APIM support-domain value remains unproven against a live baseline comparison.
 - No hosted event pipeline, durable incident state, policy engine, approval service, or always-on managed identity exists.
 - The current action-manifest schema is not yet bound cryptographically to execution.

@@ -2,6 +2,42 @@
   "schemaVersion": 1,
   "operations": [
     {
+      "operation": "change validate",
+      "mutatesAzure": false,
+      "parameters": { "artifact": "catalog artifact ID", "version": "exact artifact version", "parameters": "private JSON input file" },
+      "guarantees": ["offline package validation only", "catalog digest and freshness checks", "exact resource/API allowlist"]
+    },
+    {
+      "operation": "change plan",
+      "mutatesAzure": false,
+      "parameters": { "artifact": "catalog artifact ID", "version": "exact artifact version", "parameters": "private JSON input file" },
+      "guarantees": ["private scope and principal binding", "current-state capture", "bounded dependency checks", "30-minute plan expiry"]
+    },
+    {
+      "operation": "change approve",
+      "mutatesAzure": false,
+      "parameters": { "plan": "private plan JSON path", "digest": "exact digest approved by the user" },
+      "guarantees": ["requires supervised policy", "records externally obtained approval; never grants approval itself", "binds exact plan and expiry"]
+    },
+    {
+      "operation": "change apply-approved",
+      "mutatesAzure": true,
+      "parameters": { "plan": "private plan JSON path" },
+      "guarantees": ["supervised policy required", "scope, principal, source, approval and state drift guards", "single-use attempt record", "no automatic write retry", "configuration readback is not operational verification"]
+    },
+    {
+      "operation": "change verify",
+      "mutatesAzure": false,
+      "parameters": { "plan": "private plan JSON path" },
+      "guarantees": ["configuration readback only", "explicit mismatch exit", "independent operational verification still required"]
+    },
+    {
+      "operation": "change rollback-plan",
+      "mutatesAzure": false,
+      "parameters": { "plan": "previously attempted private forward plan" },
+      "guarantees": ["captures a new rollback plan", "requires matching current state", "rollback requires separate approval", "deletion admitted only when undoing creation"]
+    },
+    {
       "operation": "resource-group ensure",
       "mutatesAzure": true,
       "parameters": {

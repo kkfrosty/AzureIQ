@@ -1,5 +1,18 @@
 # Implementation handoff
 
+## Implemented candidate
+
+`Test-ApimApplicationInsights.ps1`, `ApimInsights.psm1` and
+`ApimInsights.Report.psm1` implement the first customer-only read-only candidate.
+The evaluator and mocked collector tests run without Azure credentials. The
+entry point exposes `-Describe`, `-Preflight`, live and offline modes, HTML/JSON
+reports and a sanitized execution record. See [exact commands](README.md).
+
+The existing VNet collector/rules and theme are reused without modifying their
+source. Related-resource coverage, query opt-in, actual workspace-schema checks
+and safe report boundaries are enforced. Customer live authentication/behavior,
+negative-path experiments and catalog/routing promotion remain unverified.
+
 ## 1. Smallest useful implementation
 
 Prefer a PowerShell 7.4-facing read-only entry point consistent with the existing
@@ -16,7 +29,7 @@ Proposed responsibilities:
 - **Collector:** allowlisted configuration GETs and optional read-only log
   queries; preserve private bindings in memory.
 - **Evaluator:** synthetic/offline inputs to stable findings; no Azure calls.
-- **Report:** sanitized JSON and the existing execution-record contract.
+- **Report:** self-contained HTML, sanitized JSON and the existing execution-record contract.
 - **GHC:** explain evidence and gaps, select the next bounded check, and draft a
   separate remediation proposal when warranted.
 

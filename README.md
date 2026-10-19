@@ -55,7 +55,15 @@ The [API Management support domain](support-domains/api-management/README.md) is
 
 Azure MCP remains the first management path. When it lacks a mutation, AzureIQ may provide a small tested SDK adapter instead of forcing repeated portal work or ad hoc scripts.
 
-The first proven CLI operation is Resource Group create-or-verify:
+The first proven CLI operation remains Resource Group create-or-verify.
+
+A bounded [observability change workflow](docs/observability-changes.md) now
+supports targeted APIM logging, alerts and subscription Activity Log export.
+It separates read-only diagnosis/planning from explicitly approved supervised
+writes, with drift checks, readback and separately approved rollback. Its
+packages have offline test evidence and remain candidate pending live validation.
+
+Resource Group commands:
 
 ```powershell
 dotnet run --project ./src/AzureIQ.Execution --configuration Release --no-restore -- resource-group ensure --name '<name>' --location '<azure-region>' --what-if

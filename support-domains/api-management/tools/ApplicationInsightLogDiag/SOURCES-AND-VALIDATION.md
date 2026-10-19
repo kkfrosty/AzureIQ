@@ -29,7 +29,7 @@ or compatibility claims. This handoff does not assert those branches are tested.
 | Prototype input/auth/override/redaction/result-shape regressions | 17 tests passed in its owning workspace | New AzureIQ implementation correctness |
 | Existing AzureIQ VNet rule suite | 50 assertions passed on 2026-10-14; zero Azure calls | Live networking or end-to-end ingestion |
 | Existing AzureIQ mocked collector suite | 11 assertions passed on 2026-10-14; zero Azure calls | Live principal selection or telemetry-query authorization |
-| New ApplicationInsightLogDiag implementation | Not implemented in this folder | Any executable diagnosis or remediation |
+| ApplicationInsightLogDiag 0.1.0 customer implementation | Offline rule/privacy/HTML and mocked collector tests pass; describe and offline HTML/audit execution exercised | Live customer authentication, real query permissions, fault detection or remediation |
 | Negative/fault experiments and matched MCP/GHC comparison | Not executed | Detection rate, resolution accuracy or value-demonstrated status |
 
 Do not merge these maturity labels. Existing support-domain validation for a

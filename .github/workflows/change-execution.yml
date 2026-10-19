@@ -1,0 +1,29 @@
+name: Change execution safety
+
+on:
+  push:
+    paths:
+      - 'src/AzureIQ.Execution*/**'
+      - 'artifacts/**'
+      - 'schemas/**'
+      - '.github/workflows/change-execution.yml'
+  pull_request:
+    paths:
+      - 'src/AzureIQ.Execution*/**'
+      - 'artifacts/**'
+      - 'schemas/**'
+      - '.github/workflows/change-execution.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-safety:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test change policy and execution boundaries without Azure credentials
+        run: dotnet test .\src\AzureIQ.Execution.Tests\AzureIQ.Execution.Tests.csproj --configuration Release

@@ -65,6 +65,12 @@ The VS Code policy step debugger is limited by current Microsoft guidance to the
 
 ## Minimum Observability Baseline
 
+For an explicit request to implement this baseline, use the
+[bounded observability change workflow](../../docs/observability-changes.md).
+Troubleshooting remains read-only; approved implementation uses the shared
+executor, not the diagnostic tools. Packages are candidate until live
+create/update/rollback and operational verification are demonstrated.
+
 - Export subscription Activity Log to the chosen operational workspace/archive.
 - Enable API Management resource logs through diagnostic settings and prefer the resource-specific `ApiManagementGatewayLogs` table.
 - Discover and select current categories for gateway, WebSocket, developer portal, generative AI gateway, or MCP traffic only when those surfaces are used.

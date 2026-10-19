@@ -9,6 +9,104 @@
   },
   "artifacts": [
     {
+      "id": "network.subnet-core-service-endpoints", "version": "0.1.0",
+      "kind": "cli-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "description": "Initialize Storage, SQL and Key Vault service endpoints on one existing classic APIM subnet, using the maintained Azure CLI without replacing other subnet settings.",
+      "intents": ["enable recommended APIM subnet service endpoints"],
+      "source": { "path": "networking/subnet-core-service-endpoints.json", "sha256": "0404277e74555c0160ca20d9255b03fafa18b8cb903551fa2cac500af81c0be7", "entryPoint": "change plan" },
+      "compatibility": {
+        "resourceTypes": ["Microsoft.Network/virtualNetworks/subnets"],
+        "clouds": ["AzureCloud"], "environments": ["non-production"],
+        "conditions": ["Existing subnet has no service endpoints", "Classic APIM membership and supported SKU verified", "CLI version/executable and same SDK/CLI actor pinned per plan", "R3 approval and exclusive change window", "Live create/update/rollback validation pending"]
+      },
+      "parameters": [{ "name": "Resource group, VNet, subnet and APIM names", "required": true, "sensitive": false, "source": "approved-manifest" }],
+      "decisionPoints": [
+        { "id": "existing-endpoints", "condition": "Any endpoint is already configured", "question": "Stop and prepare a preserving additive recipe rather than replacing existing endpoint settings?", "severity": "blocker", "canInfer": true },
+        { "id": "service-connectivity", "condition": "Source IP identity or active connections cannot tolerate a change", "question": "Which maintenance window and recovery owner are approved for the endpoint routing change?", "severity": "approval", "canInfer": false }
+      ],
+      "validation": { "level": "static", "lastValidatedAt": "2026-10-16", "expiresAt": "2026-11-15", "methods": ["Offline CLI argument, scope, identity, drift, state-preservation and rollback tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/AzureCliRecipeTests.cs", "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
+      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/CLI version/SKU/topology changes, existing endpoints, or validation expires"], "updatePolicy": "Promote only after independent live endpoint, preservation, connectivity and approved rollback verification." },
+      "owners": ["AzureIQ platform", "API Management", "Networking"], "supersedes": [], "supersededBy": null
+    },
+    {
+      "id": "observability.apim-gateway-logs", "version": "0.1.0",
+      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "description": "Targeted APIM GatewayLogs and AllMetrics export; no service redeployment.",
+      "intents": ["enable APIM gateway logging", "implement APIM diagnostic export"],
+      "source": { "path": "observability/apim-gateway-logs.json", "sha256": "d14bbcb2fd20d2fe83ee0d48d5c2996c4087bb1bb84304089766184ef2b68fb7", "entryPoint": "change plan" },
+      "compatibility": { "resourceTypes": ["Microsoft.Insights/diagnosticSettings"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Exact private scope and approved plan", "Validate GatewayLogs/AllMetrics availability on the target SKU", "Live create/update/rollback validation pending"] },
+      "parameters": [{ "name": "Exact resource names and existing workspace ID per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
+      "decisionPoints": [{ "id": "destination-and-cost", "condition": "Destination or ingestion cost is not approved", "question": "Which existing workspace and cost boundary are authorized?", "severity": "blocker", "canInfer": false }],
+      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
+      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/SKU/scope changes or validation expires"], "updatePolicy": "Promote only after independent live create/update/rollback and ingestion verification." },
+      "owners": ["AzureIQ platform", "API Management"], "supersedes": [], "supersededBy": null
+    },
+    {
+      "id": "observability.activity-log-export", "version": "0.1.0",
+      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "description": "Targeted subscription Activity Log export to an existing workspace.",
+      "intents": ["implement Activity Log export", "enable subscription audit export"],
+      "source": { "path": "observability/activity-log-export.json", "sha256": "bceab698f3162df3929c5d383a0fce332803faa0427589f3f91045c4ac972f1f", "entryPoint": "change plan" },
+      "compatibility": { "resourceTypes": ["Microsoft.Insights/diagnosticSettings"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Subscription-wide audit data export is explicitly approved", "Existing same-subscription workspace", "Live create/update/rollback validation pending"] },
+      "parameters": [{ "name": "Setting name and existing workspace ID per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
+      "decisionPoints": [{ "id": "subscription-data-boundary", "condition": "Audit destination, access or cost is undecided", "question": "Is this subscription-wide export and destination authorized?", "severity": "blocker", "canInfer": false }],
+      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
+      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/scope changes or validation expires"], "updatePolicy": "Promote only after independent live create/update/rollback and AzureActivity ingestion verification." },
+      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+    },
+    {
+      "id": "observability.apim-capacity-alert", "version": "0.1.0",
+      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "description": "Classic APIM capacity alert with an explicit threshold and existing action group.",
+      "intents": ["implement APIM capacity alert"],
+      "source": { "path": "observability/apim-capacity-alert.json", "sha256": "87433967c122a99239ceff36820f232bac73487fc8a3bf042b3f4c4a18074f9b", "entryPoint": "change plan" },
+      "compatibility": { "resourceTypes": ["Microsoft.Insights/metricAlerts"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Classic Developer/Premium SKU only", "Confirm Capacity metric availability and approved threshold/action group", "Live create/update/rollback validation pending"] },
+      "parameters": [{ "name": "Exact APIM/alert names, threshold and action group per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
+      "decisionPoints": [{ "id": "threshold-and-notification", "condition": "Threshold or recipient ownership is not approved", "question": "Which capacity threshold and existing action group are authorized?", "severity": "blocker", "canInfer": false }],
+      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
+      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/SKU/threshold/action group changes or validation expires"], "updatePolicy": "Promote only after independent live alert, notification, update and rollback verification." },
+      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+    },
+    {
+      "id": "observability.apim-failure-alert", "version": "0.1.0",
+      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "description": "HTTP 5xx percentage log alert with approved threshold and minimum traffic.",
+      "intents": ["implement APIM failure-rate alert"],
+      "source": { "path": "observability/apim-failure-alert.json", "sha256": "c9a1ddaef8a4e37e22fcba287da2f8c256e460f7a376cf5c20ab1cf5ebd587cb", "entryPoint": "change plan" },
+      "compatibility": { "resourceTypes": ["Microsoft.Insights/scheduledQueryRules"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Existing ApiManagementGatewayLogs schema and workspace/action group", "Explicit percentage and minimum request count", "Live query/alert/rollback validation pending"] },
+      "parameters": [{ "name": "Exact targets, region, percentage, minimum requests and destination per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
+      "decisionPoints": [{ "id": "failure-slo", "condition": "Failure SLO or traffic guard is undecided", "question": "Which 5xx percentage, minimum traffic and notification destination are approved?", "severity": "blocker", "canInfer": false }],
+      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
+      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/schema/SLO/action group changes or validation expires"], "updatePolicy": "Promote only after known-count/idle/notification tests and live rollback verification." },
+      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+    },
+    {
+      "id": "observability.apim-latency-alert", "version": "0.1.0",
+      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "description": "p95 gateway duration alert with approved millisecond threshold and minimum traffic.",
+      "intents": ["implement APIM latency alert"],
+      "source": { "path": "observability/apim-latency-alert.json", "sha256": "e211960de846196c518aa115339fe125304fef1415b7aa05f2330ddaea67f82b", "entryPoint": "change plan" },
+      "compatibility": { "resourceTypes": ["Microsoft.Insights/scheduledQueryRules"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Confirm TotalTime units and actual workspace schema", "Existing workspace/action group and approved p95 SLO", "Live query/alert/rollback validation pending"] },
+      "parameters": [{ "name": "Exact targets, region, latency threshold, minimum requests and destination per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
+      "decisionPoints": [{ "id": "latency-slo", "condition": "Latency SLO or traffic guard is undecided", "question": "Which p95 millisecond threshold, minimum traffic and action group are approved?", "severity": "blocker", "canInfer": false }],
+      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
+      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/schema/SLO/action group changes or validation expires"], "updatePolicy": "Promote only after percentile/idle/notification tests and live rollback verification." },
+      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+    },
+    {
+      "id": "observability.apim-telemetry-health-alert", "version": "0.1.0",
+      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "description": "Traffic-aware gateway-log delivery alert using independently exported request metrics.",
+      "intents": ["implement telemetry-health alert", "alert on missing APIM gateway logs without idle false positives"],
+      "source": { "path": "observability/apim-telemetry-health-alert.json", "sha256": "42d7f50e2f8139f6df158780732956c03cb4d95478953caf9488f42d843619bd", "entryPoint": "change plan" },
+      "compatibility": { "resourceTypes": ["Microsoft.Insights/scheduledQueryRules"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["AzureMetrics Requests and ApiManagementGatewayLogs export to the same workspace", "A completed lag-tolerant window; both-stream failure remains a blind spot", "Live query/alert/rollback validation pending"] },
+      "parameters": [{ "name": "Exact APIM, alert, workspace, region and action group per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
+      "decisionPoints": [{ "id": "independent-traffic-signal", "condition": "Independent traffic signal or destination is absent", "question": "Are exported request metrics, gateway logs and action group available and approved?", "severity": "blocker", "canInfer": false }],
+      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
+      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/schema/traffic signal/action group changes or validation expires"], "updatePolicy": "Promote only after idle/no-alert and missing-log/alert tests, notification delivery and live rollback." },
+      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+    },
+    {
       "id": "apim.vnet-check",
       "version": "0.3.3",
       "kind": "cli-workflow",
@@ -123,7 +221,7 @@
         "ensure an Azure Resource Group exists in a location"
       ],
       "source": {
-        "path": "../src/AzureIQ.Execution/operations.json",
+        "path": "versions/resource-group-ensure/1.0.0.json",
         "sha256": "e06351f29054d0d8eafd3e6114af71065f4e48bfc3bb59a06fe112695ff47775",
         "entryPoint": "resource-group ensure"
       },
