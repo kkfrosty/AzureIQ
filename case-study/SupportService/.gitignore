@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/wwwroot/
+**/test-results/
+**/playwright-report/
+**/coverage/
+.local/
+.azure/.preview-temp/
+*.user
+.env*
+!.env.example

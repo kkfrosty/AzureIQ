@@ -1,0 +1,12 @@
+<policies>
+  <inbound>
+    <base />
+    <rate-limit-by-key calls="5" renewal-period="60" counter-key="@(context.Request.IpAddress)" />
+    <set-header name="X-Harbor-Caller-Authorization" exists-action="delete" />
+    <authentication-managed-identity resource="__AUDIENCE__" ignore-error="false" />
+    <!-- The backend consumes and authorizes a short-lived, single-use ticket from the subprotocol. -->
+  </inbound>
+  <backend><forward-request /></backend>
+  <outbound><base /></outbound>
+  <on-error><base /></on-error>
+</policies>

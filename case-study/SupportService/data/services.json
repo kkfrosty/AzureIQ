@@ -1,0 +1,26 @@
+[
+  {
+    "serviceId": "managed-endpoints",
+    "name": "Managed endpoints",
+    "description": "Safe guidance for enrolled business computers and application access.",
+    "topics": ["device", "computer", "endpoint", "application", "app", "enrolled", "update", "access"]
+  },
+  {
+    "serviceId": "microsoft-365",
+    "name": "Microsoft 365 access",
+    "description": "Approved sign-in and collaboration guidance, without resetting credentials.",
+    "topics": ["microsoft", "365", "m365", "office", "sign-in", "signin", "access", "teams", "outlook"]
+  },
+  {
+    "serviceId": "office-network",
+    "name": "Office connectivity",
+    "description": "Low-risk checks for office Wi-Fi and connectivity symptoms.",
+    "topics": ["network", "wifi", "wi-fi", "connectivity", "internet", "connection", "office", "router"]
+  },
+  {
+    "serviceId": "support-portal",
+    "name": "Harbor support",
+    "description": "Company FAQs, privacy, service scope, and the exact support-case process.",
+    "topics": ["harbor", "support", "portal", "case", "company", "service", "privacy", "escalation", "proposal"]
+  }
+]

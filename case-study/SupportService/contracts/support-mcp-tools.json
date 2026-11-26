@@ -1,0 +1,228 @@
+{
+  "schemaVersion": "1.0",
+  "openApi": "support-v1.openapi.json",
+  "openApiSha256": "32c4b6e383cec452b24d5c69a007b6b804e329b554d295616d285f30493cdb02",
+  "transport": "APIM executable MCP backed by this OpenAPI; not a second backend MCP server",
+  "authentication": "Customer JWT to APIM; APIM gateway identity and forwarded caller JWT to private backend",
+  "excludedOperations": [
+    "ConfirmCaseProposal",
+    "CommitConfirmedCase",
+    "CreateVoiceSession",
+    "RevokeMyVoiceSession",
+    "ConnectVoiceRelay"
+  ],
+  "tools": [
+    {
+      "name": "company_info",
+      "description": "Read the fictional Harbor company scope and privacy notice.",
+      "operationId": "GetCompany",
+      "method": "GET",
+      "path": "/v1/company",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "parameterBindings": {},
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "service_catalog",
+      "description": "Read only the approved Harbor services.",
+      "operationId": "ListServices",
+      "method": "GET",
+      "path": "/v1/services",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "parameterBindings": {},
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "search_knowledge",
+      "description": "Search approved Harbor company evidence; returns at most three versioned citations.",
+      "operationId": "SearchCompanyKnowledge",
+      "method": "GET",
+      "path": "/v1/knowledge/search",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "enum": [
+              "managed-endpoints",
+              "microsoft-365",
+              "office-network",
+              "support-portal"
+            ]
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "serviceId",
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "parameterBindings": {
+        "serviceId": "query.serviceId",
+        "query": "query.q"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "service_status",
+      "description": "Read explicitly synthetic service status, never real telemetry.",
+      "operationId": "GetSyntheticServiceStatus",
+      "method": "GET",
+      "path": "/v1/status/{serviceId}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "enum": [
+              "managed-endpoints",
+              "microsoft-365",
+              "office-network",
+              "support-portal"
+            ]
+          }
+        },
+        "required": [
+          "serviceId"
+        ],
+        "additionalProperties": false
+      },
+      "parameterBindings": {
+        "serviceId": "path.serviceId"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_my_cases",
+      "description": "List only the authenticated caller\u0027s cases.",
+      "operationId": "ListMyCases",
+      "method": "GET",
+      "path": "/v1/cases",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "parameterBindings": {},
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_my_case",
+      "description": "Read a caller-owned case by opaque identifier.",
+      "operationId": "GetMyCase",
+      "method": "GET",
+      "path": "/v1/cases/{id}",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "parameterBindings": {
+        "id": "path.id"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "prepare_case",
+      "description": "Prepare an immutable expiring proposal ONLY. It cannot confirm or create a case.",
+      "operationId": "PrepareCase",
+      "method": "POST",
+      "path": "/v1/case-proposals",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "enum": [
+              "managed-endpoints",
+              "microsoft-365",
+              "office-network",
+              "support-portal"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "impact": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        },
+        "required": [
+          "serviceId",
+          "subject",
+          "summary",
+          "impact"
+        ],
+        "additionalProperties": false
+      },
+      "parameterBindings": {
+        "serviceId": "body.serviceId",
+        "subject": "body.subject",
+        "summary": "body.summary",
+        "impact": "body.impact"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

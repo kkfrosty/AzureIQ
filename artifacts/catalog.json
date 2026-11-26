@@ -9,102 +9,739 @@
   },
   "artifacts": [
     {
-      "id": "network.subnet-core-service-endpoints", "version": "0.1.0",
-      "kind": "cli-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
-      "description": "Initialize Storage, SQL and Key Vault service endpoints on one existing classic APIM subnet, using the maintained Azure CLI without replacing other subnet settings.",
-      "intents": ["enable recommended APIM subnet service endpoints"],
-      "source": { "path": "networking/subnet-core-service-endpoints.json", "sha256": "0404277e74555c0160ca20d9255b03fafa18b8cb903551fa2cac500af81c0be7", "entryPoint": "change plan" },
-      "compatibility": {
-        "resourceTypes": ["Microsoft.Network/virtualNetworks/subnets"],
-        "clouds": ["AzureCloud"], "environments": ["non-production"],
-        "conditions": ["Existing subnet has no service endpoints", "Classic APIM membership and supported SKU verified", "CLI version/executable and same SDK/CLI actor pinned per plan", "R3 approval and exclusive change window", "Live create/update/rollback validation pending"]
+      "id": "harbor.support-mcp-completion",
+      "version": "0.1.0",
+      "kind": "arm-template",
+      "executionMode": "declarative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Complete existing Harbor REST-backed MCP without sourceApiId cloning or passthrough settings; bind the original seven tools by absolute operation IDs, then create original API Center.",
+      "intents": ["finish Harbor executable MCP and catalog after verified API repairs"],
+      "source": {
+        "path": "../infra/support-api-repair/mcp-completion.bicep",
+        "sha256": "fbbfb737b21d220d023bc3e4e3e5a5c10415b5156eb4907dac4b2bb4dd63ee33",
+        "entryPoint": "infra/support-api-repair/mcp-completion.bicep"
       },
-      "parameters": [{ "name": "Resource group, VNet, subnet and APIM names", "required": true, "sensitive": false, "source": "approved-manifest" }],
-      "decisionPoints": [
-        { "id": "existing-endpoints", "condition": "Any endpoint is already configured", "question": "Stop and prepare a preserving additive recipe rather than replacing existing endpoint settings?", "severity": "blocker", "canInfer": true },
-        { "id": "service-connectivity", "condition": "Source IP identity or active connections cannot tolerate a change", "question": "Which maintenance window and recovery owner are approved for the endpoint routing change?", "severity": "approval", "canInfer": false }
+      "compatibility": {
+        "resourceTypes": ["Microsoft.ApiManagement/service/apis", "Microsoft.ApiCenter/services"],
+        "clouds": ["AzureCloud"],
+        "environments": ["non-production"],
+        "conditions": ["Existing Harbor support API", "Same seven reviewed tools and caller policy", "No foundation, image, data, runtime cap or usage-window changes"]
+      },
+      "parameters": [
+        {"name": "Exact existing APIM, seven tools, identity/audience, catalog/reader/tags", "required": true, "sensitive": true, "source": "approved-manifest"}
       ],
-      "validation": { "level": "static", "lastValidatedAt": "2026-10-16", "expiresAt": "2026-11-15", "methods": ["Offline CLI argument, scope, identity, drift, state-preservation and rollback tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/AzureCliRecipeTests.cs", "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
-      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/CLI version/SKU/topology changes, existing endpoints, or validation expires"], "updatePolicy": "Promote only after independent live endpoint, preservation, connectivity and approved rollback verification." },
-      "owners": ["AzureIQ platform", "API Management", "Networking"], "supersedes": [], "supersededBy": null
+      "decisionPoints": [
+        {"id": "mcp-type-readback", "condition": "Actual API does not read type mcp or operation references differ", "question": "Stop and preserve exact provider evidence without deletion or authorization weakening?", "severity": "blocker", "canInfer": true}
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-11-09",
+        "expiresAt": null,
+        "methods": [
+          "Compilation and persistent REST-backed type/no-clone/no-passthrough/absolute-operation/scope regressions pass",
+          "Actual22:06Z deployment Succeeded; parent live type mcp, seven exact tool mappings, policy XML equivalence, API Center Standard and exact APIM reader assignment verified",
+          "Public config200 and unauthenticated customer/MCP401; catalog sync still in progress, no authenticated/native portal/benefit/telemetry acceptance claim"
+        ],
+        "evidenceRefs": ["infra/support-api-repair/mcp-completion.bicep", "infra/support-api-repair/Test-McpCompletion.ps1", "infra/support-api-repair/MCP-COMPLETION.md"]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": ["Source, API type, tool mapping, policy, reader or scope changes"],
+        "updatePolicy": "Remain candidate until actual independent verification; earlier applied artifacts unchanged."
+      },
+      "owners": ["AzureIQ platform"],
+      "supersedes": [],
+      "supersededBy": null
     },
     {
-      "id": "observability.apim-gateway-logs", "version": "0.1.0",
-      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "id": "harbor.support-api-repair",
+      "version": "0.1.0",
+      "kind": "arm-template",
+      "executionMode": "declarative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Scoped recovery for confirmed WebSocket policy-scope and generated OpenAPI catch-all defects; preserves original policies, image and foundation.",
+      "intents": ["repair the failed Harbor APIM API import and complete its catalog"],
+      "source": {
+        "path": "../infra/support-api-repair/artifact-manifest.json",
+        "sha256": "fee0cfe4fcceddd205cfe6676cfbeb3bff1b850a67176ade3250a47aa2b00b16",
+        "entryPoint": "infra/support-api-repair/main.bicep"
+      },
+      "compatibility": {
+        "resourceTypes": ["Microsoft.ApiManagement/service/apis", "Microsoft.ApiCenter/services"],
+        "clouds": ["AzureCloud"],
+        "environments": ["non-production"],
+        "conditions": ["Existing Harbor APIM, backend and immutable image", "Exact source closure and actual bindings sealed in the private action manifest", "No foundation replay or lab deadline extension"]
+      },
+      "parameters": [
+        {"name": "Exact existing APIM/backend/audience/contract/tool/catalog/reader/tag bindings", "required": true, "sensitive": true, "source": "approved-manifest"}
+      ],
+      "decisionPoints": [
+        {"id": "scope-and-authority", "condition": "Actual bindings or required ARM authority differ", "question": "Stop on scope or authority drift without privilege elevation?", "severity": "blocker", "canInfer": true}
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-11-09",
+        "expiresAt": null,
+        "methods": [
+          "Compilation and policy-scope/path-parameter/MCP-object-shape regressions pass;26 integration tests pass",
+          "Actual support import and handshake policy Succeeded; readback preserves managed identity and caller-header stripping",
+          "Next live failure identified endpoints array rejected by provider expecting dictionary; corrected object shape passes final Provider validation but not applied before cutoff",
+          "Preview schema mismatch is suppressed only at endpoints with exact live provider evidence; no runtime safety guard is suppressed"
+        ],
+        "evidenceRefs": ["infra/support-api-repair/Test-Package.ps1", "infra/support-api-repair/README.md"]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": ["Source, contract, target, principal or live API state changes"],
+        "updatePolicy": "Remain candidate until independent actual acceptance; never rewrite approved source."
+      },
+      "owners": ["AzureIQ platform"],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "harbor.support-ecosystem",
+      "version": "0.1.0",
+      "kind": "arm-template",
+      "executionMode": "declarative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Disposable Harbor support ecosystem with Standard v2, linked API Center Standard, private application/model/retrieval/data paths and explicit native MCP activation gates.",
+      "intents": [
+        "build the Harbor IT Services lab",
+        "recreate the complete APIM and API Center learning ecosystem"
+      ],
+      "source": {
+        "path": "../infra/support-service/artifact-manifest.json",
+        "sha256": "ed69cebbdc93af64dc6660c14af0f4678dbde36722d1358d9dedb3e2e0e1910a",
+        "entryPoint": "infra/support-service/main.bicep"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.ApiManagement/service",
+          "Microsoft.ApiCenter/services",
+          "Microsoft.App/containerApps",
+          "Microsoft.CognitiveServices/accounts",
+          "Microsoft.Search/searchServices",
+          "Microsoft.Storage/storageAccounts"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "One owned disposable lab at a time",
+          "Final compiler/provider validation and live acceptance pending",
+          "Entra app roles, exact private scope, model/voice availability and approved alert destination required",
+          "Native API Center portal/MCP activation and linked billing benefit must be verified, not assumed",
+          "Complete conservative forecast within USD400/month and at most 200 aggregate billed lab-window hours"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Environment, region, owned resource group, approved lab dates and model selection",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "Entra audience, public-client configuration, reader principal and alert bindings",
+          "required": true,
+          "sensitive": true,
+          "source": "private-config"
+        },
+        {
+          "name": "Immutable application image, generated OpenAPI and reviewed support tool set",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "native-mcp-and-benefit",
+          "condition": "API Center Standard native MCP or eligible billing benefit is not verified",
+          "question": "Stop readiness promotion and price the paid catalog or shorten the approved run?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "scope-and-approval",
+          "condition": "Effective private scope, principal or exact change authorization is missing or differs",
+          "question": "Stop until the intended target is verified and the exact operation manifest is approved?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "full-cost",
+          "condition": "Model/audio/network rates, residuals or teardown margin are not established",
+          "question": "Reduce the proposed lab window or stop before spending beyond the remaining USD400 allowance?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "none",
+        "lastValidatedAt": null,
+        "expiresAt": null,
+        "methods": [
+          "Partial local checks only; see source manifest and readiness record. Final Bicep execution is sandbox-blocked."
+        ],
+        "evidenceRefs": [
+          "infra/support-service/README.md",
+          "infra/support-service/Test-Package.ps1",
+          "infra/support-service/expected-inventory.json",
+          "infra/support-service/cost-envelope.json"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Any source, application contract, identity, network model, service API, quota, pricing or scope changes"
+        ],
+        "updatePolicy": "Remain candidate until actual native MCP, ingestion, authorized user flows and two owned create/use/remove cycles are independently verified; never silently mutate an approved version."
+      },
+      "owners": [
+        "AzureIQ platform"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "network.subnet-core-service-endpoints",
+      "version": "0.1.0",
+      "kind": "cli-workflow",
+      "executionMode": "imperative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Initialize Storage, SQL and Key Vault service endpoints on one existing classic APIM subnet, using the maintained Azure CLI without replacing other subnet settings.",
+      "intents": [
+        "enable recommended APIM subnet service endpoints"
+      ],
+      "source": {
+        "path": "networking/subnet-core-service-endpoints.json",
+        "sha256": "0404277e74555c0160ca20d9255b03fafa18b8cb903551fa2cac500af81c0be7",
+        "entryPoint": "change plan"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Network/virtualNetworks/subnets"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "Existing subnet has no service endpoints",
+          "Classic APIM membership and supported SKU verified",
+          "CLI version/executable and same SDK/CLI actor pinned per plan",
+          "R3 approval and exclusive change window",
+          "Live create/update/rollback validation pending"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Resource group, VNet, subnet and APIM names",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "existing-endpoints",
+          "condition": "Any endpoint is already configured",
+          "question": "Stop and prepare a preserving additive recipe rather than replacing existing endpoint settings?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "service-connectivity",
+          "condition": "Source IP identity or active connections cannot tolerate a change",
+          "question": "Which maintenance window and recovery owner are approved for the endpoint routing change?",
+          "severity": "approval",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-16",
+        "expiresAt": "2026-11-15",
+        "methods": [
+          "Offline CLI argument, scope, identity, drift, state-preservation and rollback tests"
+        ],
+        "evidenceRefs": [
+          "src/AzureIQ.Execution.Tests/AzureCliRecipeTests.cs",
+          "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Source/API/CLI version/SKU/topology changes, existing endpoints, or validation expires"
+        ],
+        "updatePolicy": "Promote only after independent live endpoint, preservation, connectivity and approved rollback verification."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "API Management",
+        "Networking"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "observability.apim-gateway-logs",
+      "version": "0.1.0",
+      "kind": "rest-workflow",
+      "executionMode": "imperative",
+      "status": "candidate",
+      "valueProof": "unproven",
       "description": "Targeted APIM GatewayLogs and AllMetrics export; no service redeployment.",
-      "intents": ["enable APIM gateway logging", "implement APIM diagnostic export"],
-      "source": { "path": "observability/apim-gateway-logs.json", "sha256": "d14bbcb2fd20d2fe83ee0d48d5c2996c4087bb1bb84304089766184ef2b68fb7", "entryPoint": "change plan" },
-      "compatibility": { "resourceTypes": ["Microsoft.Insights/diagnosticSettings"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Exact private scope and approved plan", "Validate GatewayLogs/AllMetrics availability on the target SKU", "Live create/update/rollback validation pending"] },
-      "parameters": [{ "name": "Exact resource names and existing workspace ID per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
-      "decisionPoints": [{ "id": "destination-and-cost", "condition": "Destination or ingestion cost is not approved", "question": "Which existing workspace and cost boundary are authorized?", "severity": "blocker", "canInfer": false }],
-      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
-      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/SKU/scope changes or validation expires"], "updatePolicy": "Promote only after independent live create/update/rollback and ingestion verification." },
-      "owners": ["AzureIQ platform", "API Management"], "supersedes": [], "supersededBy": null
+      "intents": [
+        "enable APIM gateway logging",
+        "implement APIM diagnostic export"
+      ],
+      "source": {
+        "path": "observability/apim-gateway-logs.json",
+        "sha256": "d14bbcb2fd20d2fe83ee0d48d5c2996c4087bb1bb84304089766184ef2b68fb7",
+        "entryPoint": "change plan"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Insights/diagnosticSettings"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "Exact private scope and approved plan",
+          "Validate GatewayLogs/AllMetrics availability on the target SKU",
+          "Live create/update/rollback validation pending"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Exact resource names and existing workspace ID per package schema",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "destination-and-cost",
+          "condition": "Destination or ingestion cost is not approved",
+          "question": "Which existing workspace and cost boundary are authorized?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-15",
+        "expiresAt": "2026-11-14",
+        "methods": [
+          "Offline executor and package tests"
+        ],
+        "evidenceRefs": [
+          "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Source/API/SKU/scope changes or validation expires"
+        ],
+        "updatePolicy": "Promote only after independent live create/update/rollback and ingestion verification."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "API Management"
+      ],
+      "supersedes": [],
+      "supersededBy": null
     },
     {
-      "id": "observability.activity-log-export", "version": "0.1.0",
-      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "id": "observability.activity-log-export",
+      "version": "0.1.0",
+      "kind": "rest-workflow",
+      "executionMode": "imperative",
+      "status": "candidate",
+      "valueProof": "unproven",
       "description": "Targeted subscription Activity Log export to an existing workspace.",
-      "intents": ["implement Activity Log export", "enable subscription audit export"],
-      "source": { "path": "observability/activity-log-export.json", "sha256": "bceab698f3162df3929c5d383a0fce332803faa0427589f3f91045c4ac972f1f", "entryPoint": "change plan" },
-      "compatibility": { "resourceTypes": ["Microsoft.Insights/diagnosticSettings"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Subscription-wide audit data export is explicitly approved", "Existing same-subscription workspace", "Live create/update/rollback validation pending"] },
-      "parameters": [{ "name": "Setting name and existing workspace ID per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
-      "decisionPoints": [{ "id": "subscription-data-boundary", "condition": "Audit destination, access or cost is undecided", "question": "Is this subscription-wide export and destination authorized?", "severity": "blocker", "canInfer": false }],
-      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
-      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/scope changes or validation expires"], "updatePolicy": "Promote only after independent live create/update/rollback and AzureActivity ingestion verification." },
-      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+      "intents": [
+        "implement Activity Log export",
+        "enable subscription audit export"
+      ],
+      "source": {
+        "path": "observability/activity-log-export.json",
+        "sha256": "bceab698f3162df3929c5d383a0fce332803faa0427589f3f91045c4ac972f1f",
+        "entryPoint": "change plan"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Insights/diagnosticSettings"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "Subscription-wide audit data export is explicitly approved",
+          "Existing same-subscription workspace",
+          "Live create/update/rollback validation pending"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Setting name and existing workspace ID per package schema",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "subscription-data-boundary",
+          "condition": "Audit destination, access or cost is undecided",
+          "question": "Is this subscription-wide export and destination authorized?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-15",
+        "expiresAt": "2026-11-14",
+        "methods": [
+          "Offline executor and package tests"
+        ],
+        "evidenceRefs": [
+          "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Source/API/scope changes or validation expires"
+        ],
+        "updatePolicy": "Promote only after independent live create/update/rollback and AzureActivity ingestion verification."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "Azure Monitor"
+      ],
+      "supersedes": [],
+      "supersededBy": null
     },
     {
-      "id": "observability.apim-capacity-alert", "version": "0.1.0",
-      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "id": "observability.apim-capacity-alert",
+      "version": "0.1.0",
+      "kind": "rest-workflow",
+      "executionMode": "imperative",
+      "status": "candidate",
+      "valueProof": "unproven",
       "description": "Classic APIM capacity alert with an explicit threshold and existing action group.",
-      "intents": ["implement APIM capacity alert"],
-      "source": { "path": "observability/apim-capacity-alert.json", "sha256": "87433967c122a99239ceff36820f232bac73487fc8a3bf042b3f4c4a18074f9b", "entryPoint": "change plan" },
-      "compatibility": { "resourceTypes": ["Microsoft.Insights/metricAlerts"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Classic Developer/Premium SKU only", "Confirm Capacity metric availability and approved threshold/action group", "Live create/update/rollback validation pending"] },
-      "parameters": [{ "name": "Exact APIM/alert names, threshold and action group per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
-      "decisionPoints": [{ "id": "threshold-and-notification", "condition": "Threshold or recipient ownership is not approved", "question": "Which capacity threshold and existing action group are authorized?", "severity": "blocker", "canInfer": false }],
-      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
-      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/SKU/threshold/action group changes or validation expires"], "updatePolicy": "Promote only after independent live alert, notification, update and rollback verification." },
-      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+      "intents": [
+        "implement APIM capacity alert"
+      ],
+      "source": {
+        "path": "observability/apim-capacity-alert.json",
+        "sha256": "87433967c122a99239ceff36820f232bac73487fc8a3bf042b3f4c4a18074f9b",
+        "entryPoint": "change plan"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Insights/metricAlerts"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "Classic Developer/Premium SKU only",
+          "Confirm Capacity metric availability and approved threshold/action group",
+          "Live create/update/rollback validation pending"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Exact APIM/alert names, threshold and action group per package schema",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "threshold-and-notification",
+          "condition": "Threshold or recipient ownership is not approved",
+          "question": "Which capacity threshold and existing action group are authorized?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-15",
+        "expiresAt": "2026-11-14",
+        "methods": [
+          "Offline executor and package tests"
+        ],
+        "evidenceRefs": [
+          "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Source/API/SKU/threshold/action group changes or validation expires"
+        ],
+        "updatePolicy": "Promote only after independent live alert, notification, update and rollback verification."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "Azure Monitor"
+      ],
+      "supersedes": [],
+      "supersededBy": null
     },
     {
-      "id": "observability.apim-failure-alert", "version": "0.1.0",
-      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "id": "observability.apim-failure-alert",
+      "version": "0.1.0",
+      "kind": "rest-workflow",
+      "executionMode": "imperative",
+      "status": "candidate",
+      "valueProof": "unproven",
       "description": "HTTP 5xx percentage log alert with approved threshold and minimum traffic.",
-      "intents": ["implement APIM failure-rate alert"],
-      "source": { "path": "observability/apim-failure-alert.json", "sha256": "c9a1ddaef8a4e37e22fcba287da2f8c256e460f7a376cf5c20ab1cf5ebd587cb", "entryPoint": "change plan" },
-      "compatibility": { "resourceTypes": ["Microsoft.Insights/scheduledQueryRules"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Existing ApiManagementGatewayLogs schema and workspace/action group", "Explicit percentage and minimum request count", "Live query/alert/rollback validation pending"] },
-      "parameters": [{ "name": "Exact targets, region, percentage, minimum requests and destination per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
-      "decisionPoints": [{ "id": "failure-slo", "condition": "Failure SLO or traffic guard is undecided", "question": "Which 5xx percentage, minimum traffic and notification destination are approved?", "severity": "blocker", "canInfer": false }],
-      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
-      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/schema/SLO/action group changes or validation expires"], "updatePolicy": "Promote only after known-count/idle/notification tests and live rollback verification." },
-      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+      "intents": [
+        "implement APIM failure-rate alert"
+      ],
+      "source": {
+        "path": "observability/apim-failure-alert.json",
+        "sha256": "c9a1ddaef8a4e37e22fcba287da2f8c256e460f7a376cf5c20ab1cf5ebd587cb",
+        "entryPoint": "change plan"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Insights/scheduledQueryRules"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "Existing ApiManagementGatewayLogs schema and workspace/action group",
+          "Explicit percentage and minimum request count",
+          "Live query/alert/rollback validation pending"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Exact targets, region, percentage, minimum requests and destination per package schema",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "failure-slo",
+          "condition": "Failure SLO or traffic guard is undecided",
+          "question": "Which 5xx percentage, minimum traffic and notification destination are approved?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-15",
+        "expiresAt": "2026-11-14",
+        "methods": [
+          "Offline executor and package tests"
+        ],
+        "evidenceRefs": [
+          "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Source/API/schema/SLO/action group changes or validation expires"
+        ],
+        "updatePolicy": "Promote only after known-count/idle/notification tests and live rollback verification."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "Azure Monitor"
+      ],
+      "supersedes": [],
+      "supersededBy": null
     },
     {
-      "id": "observability.apim-latency-alert", "version": "0.1.0",
-      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "id": "observability.apim-latency-alert",
+      "version": "0.1.0",
+      "kind": "rest-workflow",
+      "executionMode": "imperative",
+      "status": "candidate",
+      "valueProof": "unproven",
       "description": "p95 gateway duration alert with approved millisecond threshold and minimum traffic.",
-      "intents": ["implement APIM latency alert"],
-      "source": { "path": "observability/apim-latency-alert.json", "sha256": "e211960de846196c518aa115339fe125304fef1415b7aa05f2330ddaea67f82b", "entryPoint": "change plan" },
-      "compatibility": { "resourceTypes": ["Microsoft.Insights/scheduledQueryRules"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["Confirm TotalTime units and actual workspace schema", "Existing workspace/action group and approved p95 SLO", "Live query/alert/rollback validation pending"] },
-      "parameters": [{ "name": "Exact targets, region, latency threshold, minimum requests and destination per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
-      "decisionPoints": [{ "id": "latency-slo", "condition": "Latency SLO or traffic guard is undecided", "question": "Which p95 millisecond threshold, minimum traffic and action group are approved?", "severity": "blocker", "canInfer": false }],
-      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
-      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/schema/SLO/action group changes or validation expires"], "updatePolicy": "Promote only after percentile/idle/notification tests and live rollback verification." },
-      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+      "intents": [
+        "implement APIM latency alert"
+      ],
+      "source": {
+        "path": "observability/apim-latency-alert.json",
+        "sha256": "e211960de846196c518aa115339fe125304fef1415b7aa05f2330ddaea67f82b",
+        "entryPoint": "change plan"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Insights/scheduledQueryRules"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "Confirm TotalTime units and actual workspace schema",
+          "Existing workspace/action group and approved p95 SLO",
+          "Live query/alert/rollback validation pending"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Exact targets, region, latency threshold, minimum requests and destination per package schema",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "latency-slo",
+          "condition": "Latency SLO or traffic guard is undecided",
+          "question": "Which p95 millisecond threshold, minimum traffic and action group are approved?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-15",
+        "expiresAt": "2026-11-14",
+        "methods": [
+          "Offline executor and package tests"
+        ],
+        "evidenceRefs": [
+          "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Source/API/schema/SLO/action group changes or validation expires"
+        ],
+        "updatePolicy": "Promote only after percentile/idle/notification tests and live rollback verification."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "Azure Monitor"
+      ],
+      "supersedes": [],
+      "supersededBy": null
     },
     {
-      "id": "observability.apim-telemetry-health-alert", "version": "0.1.0",
-      "kind": "rest-workflow", "executionMode": "imperative", "status": "candidate", "valueProof": "unproven",
+      "id": "observability.apim-telemetry-health-alert",
+      "version": "0.1.0",
+      "kind": "rest-workflow",
+      "executionMode": "imperative",
+      "status": "candidate",
+      "valueProof": "unproven",
       "description": "Traffic-aware gateway-log delivery alert using independently exported request metrics.",
-      "intents": ["implement telemetry-health alert", "alert on missing APIM gateway logs without idle false positives"],
-      "source": { "path": "observability/apim-telemetry-health-alert.json", "sha256": "42d7f50e2f8139f6df158780732956c03cb4d95478953caf9488f42d843619bd", "entryPoint": "change plan" },
-      "compatibility": { "resourceTypes": ["Microsoft.Insights/scheduledQueryRules"], "clouds": ["AzureCloud"], "environments": ["non-production"], "conditions": ["AzureMetrics Requests and ApiManagementGatewayLogs export to the same workspace", "A completed lag-tolerant window; both-stream failure remains a blind spot", "Live query/alert/rollback validation pending"] },
-      "parameters": [{ "name": "Exact APIM, alert, workspace, region and action group per package schema", "required": true, "sensitive": false, "source": "approved-manifest" }],
-      "decisionPoints": [{ "id": "independent-traffic-signal", "condition": "Independent traffic signal or destination is absent", "question": "Are exported request metrics, gateway logs and action group available and approved?", "severity": "blocker", "canInfer": false }],
-      "validation": { "level": "static", "lastValidatedAt": "2026-10-15", "expiresAt": "2026-11-14", "methods": ["Offline executor and package tests"], "evidenceRefs": ["src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"] },
-      "reuse": { "strategy": "parameterize", "revalidateWhen": ["Source/API/schema/traffic signal/action group changes or validation expires"], "updatePolicy": "Promote only after idle/no-alert and missing-log/alert tests, notification delivery and live rollback." },
-      "owners": ["AzureIQ platform", "Azure Monitor"], "supersedes": [], "supersededBy": null
+      "intents": [
+        "implement telemetry-health alert",
+        "alert on missing APIM gateway logs without idle false positives"
+      ],
+      "source": {
+        "path": "observability/apim-telemetry-health-alert.json",
+        "sha256": "42d7f50e2f8139f6df158780732956c03cb4d95478953caf9488f42d843619bd",
+        "entryPoint": "change plan"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Insights/scheduledQueryRules"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "AzureMetrics Requests and ApiManagementGatewayLogs export to the same workspace",
+          "A completed lag-tolerant window; both-stream failure remains a blind spot",
+          "Live query/alert/rollback validation pending"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Exact APIM, alert, workspace, region and action group per package schema",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "independent-traffic-signal",
+          "condition": "Independent traffic signal or destination is absent",
+          "question": "Are exported request metrics, gateway logs and action group available and approved?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-10-15",
+        "expiresAt": "2026-11-14",
+        "methods": [
+          "Offline executor and package tests"
+        ],
+        "evidenceRefs": [
+          "src/AzureIQ.Execution.Tests/ChangeWorkflowTests.cs"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Source/API/schema/traffic signal/action group changes or validation expires"
+        ],
+        "updatePolicy": "Promote only after idle/no-alert and missing-log/alert tests, notification delivery and live rollback."
+      },
+      "owners": [
+        "AzureIQ platform",
+        "Azure Monitor"
+      ],
+      "supersedes": [],
+      "supersededBy": null
     },
     {
       "id": "apim.vnet-check",
@@ -114,24 +751,68 @@
       "status": "candidate",
       "valueProof": "unproven",
       "description": "Read-only APIM VNet assessment with evidence-correct endpoint classifications, complete executed-package fingerprints, safe phase diagnostics, per-read timing/version evidence and private customer reports.",
-      "intents": ["run all read-only APIM VNet checks", "generate and analyze sectioned APIM networking HTML reports"],
+      "intents": [
+        "run all read-only APIM VNet checks",
+        "generate and analyze sectioned APIM networking HTML reports"
+      ],
       "source": {
         "path": "../support-domains/api-management/tools/vnet-check/rules.json",
         "sha256": "8bdb41a6611f38a0297151c4a8bbd2676e80c8577642b37ed93d9e58e2cba642",
         "entryPoint": "support-domains/api-management/tools/vnet-check/Test-ApimVnet.ps1"
       },
       "compatibility": {
-        "resourceTypes": ["Microsoft.ApiManagement/service", "Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/routeTables"],
-        "clouds": ["AzureCloud"],
-        "environments": ["non-production", "production-read-only"],
-        "conditions": ["classic Developer/Premium injection or Premium v2 internal injection", "PowerShell 7.4 or later", "live collection requires existing Azure CLI authentication and exact private scope/principal", "HTML is a point-in-time report, not continuous monitoring", "private operator reports use Git-ignored .azureiq/private-reports/api-management/vnet-check/RUN-... in the trusted workspace; offline reports are not live evidence"]
+        "resourceTypes": [
+          "Microsoft.ApiManagement/service",
+          "Microsoft.Network/virtualNetworks",
+          "Microsoft.Network/networkSecurityGroups",
+          "Microsoft.Network/routeTables"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production",
+          "production-read-only"
+        ],
+        "conditions": [
+          "classic Developer/Premium injection or Premium v2 internal injection",
+          "PowerShell 7.4 or later",
+          "live collection requires existing Azure CLI authentication and exact private scope/principal",
+          "HTML is a point-in-time report, not continuous monitoring",
+          "private operator reports use Git-ignored .azureiq/private-reports/api-management/vnet-check/RUN-... in the trusted workspace; offline reports are not live evidence"
+        ]
       },
       "parameters": [
-        { "name": "Describe", "required": false, "sensitive": false, "source": "artifact-default" },
-        { "name": "Preflight", "required": false, "sensitive": false, "source": "artifact-default" },
-        { "name": "service and resource group names", "required": false, "sensitive": true, "source": "derived" },
-        { "name": "offline snapshot path", "required": false, "sensitive": true, "source": "derived" },
-        { "name": "private tenant, subscription and reader principal", "required": false, "sensitive": true, "source": "private-config" }
+        {
+          "name": "Describe",
+          "required": false,
+          "sensitive": false,
+          "source": "artifact-default"
+        },
+        {
+          "name": "Preflight",
+          "required": false,
+          "sensitive": false,
+          "source": "artifact-default"
+        },
+        {
+          "name": "service and resource group names",
+          "required": false,
+          "sensitive": true,
+          "source": "derived"
+        },
+        {
+          "name": "offline snapshot path",
+          "required": false,
+          "sensitive": true,
+          "source": "derived"
+        },
+        {
+          "name": "private tenant, subscription and reader principal",
+          "required": false,
+          "sensitive": true,
+          "source": "private-config"
+        }
       ],
       "decisionPoints": [
         {
@@ -146,16 +827,32 @@
         "level": "static",
         "lastValidatedAt": "2026-10-19",
         "expiresAt": null,
-        "methods": ["offline endpoint state/counterexample, SKU, NSG, UTC, report and package-provenance tests", "mocked collector timing/ETag evidence, authentication preflight and scope guards", "safe successful/failed entrypoint diagnostic checks; live controlled comparisons remain pending"],
-        "evidenceRefs": ["support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1", "support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Collector.Tests.ps1", "support-domains/api-management/tools/vnet-check/COPILOT.md"]
+        "methods": [
+          "offline endpoint state/counterexample, SKU, NSG, UTC, report and package-provenance tests",
+          "mocked collector timing/ETag evidence, authentication preflight and scope guards",
+          "safe successful/failed entrypoint diagnostic checks; live controlled comparisons remain pending"
+        ],
+        "evidenceRefs": [
+          "support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1",
+          "support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Collector.Tests.ps1",
+          "support-domains/api-management/tools/vnet-check/COPILOT.md"
+        ]
       },
       "reuse": {
         "strategy": "parameterize",
-        "revalidateWhen": ["SKU, network model or Microsoft requirements change", "API versions or authentication adapter change", "report or Copilot invocation contract changes"],
+        "revalidateWhen": [
+          "SKU, network model or Microsoft requirements change",
+          "API versions or authentication adapter change",
+          "report or Copilot invocation contract changes"
+        ],
         "updatePolicy": "Candidate until live/model-routing comparison; version behavioral changes and preserve older source digests."
       },
-      "owners": ["AzureIQ APIM support domain"],
-      "supersedes": ["apim.vnet-check@0.1.0"],
+      "owners": [
+        "AzureIQ APIM support domain"
+      ],
+      "supersedes": [
+        "apim.vnet-check@0.1.0"
+      ],
       "supersededBy": null
     },
     {
@@ -166,22 +863,54 @@
       "status": "candidate",
       "valueProof": "unproven",
       "description": "SKU-discovered, read-only APIM VNet configuration checks for classic Developer/Premium and Premium v2 injection, with explicit unknowns and sanitized reports.",
-      "intents": ["check APIM VNet injection configuration", "identify APIM network configuration blockers"],
+      "intents": [
+        "check APIM VNet injection configuration",
+        "identify APIM network configuration blockers"
+      ],
       "source": {
         "path": "../support-domains/api-management/tools/vnet-check/versions/0.1.0/rules.json",
         "sha256": "f78570ffc8de10f2ddcc21c907e9d0f1202d7449c5654e17ef914d6cf91b26e6",
         "entryPoint": "support-domains/api-management/tools/vnet-check/Test-ApimVnet.ps1"
       },
       "compatibility": {
-        "resourceTypes": ["Microsoft.ApiManagement/service", "Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/routeTables"],
-        "clouds": ["AzureCloud"],
-        "environments": ["non-production", "production-read-only"],
-        "conditions": ["classic Developer/Premium internal/external injection or Premium v2 internal injection", "PowerShell 7.4 or later", "live collection requires Azure CLI and exact private tenant, subscription and principal scope"]
+        "resourceTypes": [
+          "Microsoft.ApiManagement/service",
+          "Microsoft.Network/virtualNetworks",
+          "Microsoft.Network/networkSecurityGroups",
+          "Microsoft.Network/routeTables"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production",
+          "production-read-only"
+        ],
+        "conditions": [
+          "classic Developer/Premium internal/external injection or Premium v2 internal injection",
+          "PowerShell 7.4 or later",
+          "live collection requires Azure CLI and exact private tenant, subscription and principal scope"
+        ]
       },
       "parameters": [
-        { "name": "service and resource group names", "required": false, "sensitive": true, "source": "derived" },
-        { "name": "offline snapshot path", "required": false, "sensitive": true, "source": "derived" },
-        { "name": "private tenant, subscription and reader principal", "required": false, "sensitive": true, "source": "private-config" }
+        {
+          "name": "service and resource group names",
+          "required": false,
+          "sensitive": true,
+          "source": "derived"
+        },
+        {
+          "name": "offline snapshot path",
+          "required": false,
+          "sensitive": true,
+          "source": "derived"
+        },
+        {
+          "name": "private tenant, subscription and reader principal",
+          "required": false,
+          "sensitive": true,
+          "source": "private-config"
+        }
       ],
       "decisionPoints": [
         {
@@ -196,15 +925,27 @@
         "level": "static",
         "lastValidatedAt": "2026-10-14",
         "expiresAt": null,
-        "methods": ["current Microsoft documentation review", "offline synthetic SKU, NSG, freshness, scope and privacy tests"],
-        "evidenceRefs": ["support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1", "support-domains/api-management/tools/vnet-check/SOURCES.md"]
+        "methods": [
+          "current Microsoft documentation review",
+          "offline synthetic SKU, NSG, freshness, scope and privacy tests"
+        ],
+        "evidenceRefs": [
+          "support-domains/api-management/tools/vnet-check/tests/Test-ApimVnet.Tests.ps1",
+          "support-domains/api-management/tools/vnet-check/SOURCES.md"
+        ]
       },
       "reuse": {
         "strategy": "parameterize",
-        "revalidateWhen": ["SKU or network model changes", "Microsoft network requirements change", "API versions or authentication adapter change"],
+        "revalidateWhen": [
+          "SKU or network model changes",
+          "Microsoft network requirements change",
+          "API versions or authentication adapter change"
+        ],
         "updatePolicy": "Keep candidate until live baseline comparison; version behavioral changes rather than altering approved artifacts."
       },
-      "owners": ["AzureIQ APIM support domain"],
+      "owners": [
+        "AzureIQ APIM support domain"
+      ],
       "supersedes": [],
       "supersededBy": "apim.vnet-check@0.4.0"
     },
@@ -1036,6 +1777,218 @@
       "owners": [
         "AzureIQ platform"
       ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "harbor.support-ecosystem",
+      "version": "0.1.1",
+      "kind": "arm-template",
+      "executionMode": "declarative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Harbor provider-compatibility repair: private AAD-only Search and serialized Foundry account operations; same resources, tiers, network boundaries and RBAC.",
+      "intents": [
+        "build the Harbor IT Services lab",
+        "recreate the complete APIM and API Center learning ecosystem"
+      ],
+      "source": {
+        "path": "../infra/support-service-v0.1.1/artifact-manifest.json",
+        "sha256": "25e5ea49bea1749caa44089faa4157e83596a36f8733056c7dcb52eab1be4076",
+        "entryPoint": "infra/support-service-v0.1.1/main.bicep"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.ApiManagement/service",
+          "Microsoft.ApiCenter/services",
+          "Microsoft.App/containerApps",
+          "Microsoft.CognitiveServices/accounts",
+          "Microsoft.Search/searchServices",
+          "Microsoft.Storage/storageAccounts"
+        ],
+        "clouds": [
+          "AzureCloud"
+        ],
+        "environments": [
+          "non-production"
+        ],
+        "conditions": [
+          "One owned disposable lab at a time",
+          "Final compiler/provider validation and live acceptance pending",
+          "Entra app roles, exact private scope, model/voice availability and approved alert destination required",
+          "Native API Center portal/MCP activation and linked billing benefit must be verified, not assumed",
+          "Complete conservative forecast within USD400/month and at most 200 aggregate billed lab-window hours"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Environment, region, owned resource group, approved lab dates and model selection",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "Entra audience, public-client configuration, reader principal and alert bindings",
+          "required": true,
+          "sensitive": true,
+          "source": "private-config"
+        },
+        {
+          "name": "Immutable application image, generated OpenAPI and reviewed support tool set",
+          "required": true,
+          "sensitive": false,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "native-mcp-and-benefit",
+          "condition": "API Center Standard native MCP or eligible billing benefit is not verified",
+          "question": "Stop readiness promotion and price the paid catalog or shorten the approved run?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "scope-and-approval",
+          "condition": "Effective private scope, principal or exact change authorization is missing or differs",
+          "question": "Stop until the intended target is verified and the exact operation manifest is approved?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "full-cost",
+          "condition": "Model/audio/network rates, residuals or teardown margin are not established",
+          "question": "Reduce the proposed lab window or stop before spending beyond the remaining USD400 allowance?",
+          "severity": "blocker",
+          "canInfer": false
+        }
+      ],
+      "validation": {
+        "level": "none",
+        "lastValidatedAt": null,
+        "expiresAt": null,
+        "methods": [
+          "Two candidate entry points compiled offline; private AAD-only Search and Foundry dependency assertions passed. Provider/live repair verification pending."
+        ],
+        "evidenceRefs": [
+          "infra/support-service-v0.1.1/artifact-manifest.json",
+          "infra/support-service/expected-inventory.json"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Any source, application contract, identity, network model, service API, quota, pricing or scope changes"
+        ],
+        "updatePolicy": "Remain candidate until actual native MCP, ingestion, authorized user flows and two owned create/use/remove cycles are independently verified; never silently mutate an approved version."
+      },
+      "owners": [
+        "AzureIQ platform"
+      ],
+      "supersedes": [],
+      "supersededBy": null
+    },
+    {
+      "id": "harbor.support-ecosystem",
+      "version": "0.1.2",
+      "kind": "arm-template",
+      "executionMode": "declarative",
+      "status": "candidate",
+      "valueProof": "unproven",
+      "description": "Existing-network Harbor recovery preserving verified subnet NSG attachments, explicit private environment access and disabled Search bypass; earlier provider repairs, services, tiers, identities and caps are unchanged.",
+      "intents": [
+        "resume a partial Harbor rollout without detaching existing subnet NSGs"
+      ],
+      "source": {
+        "path": "../infra/support-service-v0.1.2/artifact-manifest.json",
+        "sha256": "7001d7ae74231bccd6e9e08ebd1c658b16441a0abef3dbaae24096c821d37f93",
+        "entryPoint": "infra/support-service-v0.1.2/main.bicep"
+      },
+      "compatibility": {
+        "resourceTypes": [
+          "Microsoft.Network/virtualNetworks",
+          "Microsoft.ApiManagement/service",
+          "Microsoft.ApiCenter/services",
+          "Microsoft.App/containerApps",
+          "Microsoft.CognitiveServices/accounts",
+          "Microsoft.Search/searchServices",
+          "Microsoft.Storage/storageAccounts"
+        ],
+        "clouds": ["AzureCloud"],
+        "environments": ["non-production"],
+        "conditions": [
+          "Existing owned Harbor network with both subnet NSGs already attached; not a fresh bootstrap",
+          "Known live-apply defects: shared voice policy is invalid at WebSocket API scope; generated support contract includes an undeclared unmatched path parameter. Do not retry this version unchanged or promote readiness.",
+          "Both exact current NSG IDs must be read back and verified in the approved subscription/resource group",
+          "Fresh approval binds this source version, real image/identities and current dates",
+          "No resource deletion, replacement or existing subnet NSG detach/rebind in fresh Provider what-if",
+          "Original private paths, strict JWT roles/scopes, runtime caps and USD400/month/200-hour limits remain",
+          "Durable usage-ledger window binding and all functional/telemetry/native-MCP gates remain"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "Exact current Container Apps and private-endpoint subnet NSG IDs",
+          "required": true,
+          "sensitive": true,
+          "source": "approved-manifest"
+        },
+        {
+          "name": "Original real Harbor parameters plus approved current lab expiry",
+          "required": true,
+          "sensitive": true,
+          "source": "approved-manifest"
+        }
+      ],
+      "decisionPoints": [
+        {
+          "id": "preserve-network",
+          "condition": "Existing attachments differ or fresh what-if predicts detach/rebind",
+          "question": "Stop and reconcile exact live bindings rather than weakening subnet security?",
+          "severity": "blocker",
+          "canInfer": true
+        },
+        {
+          "id": "scope-source-and-dates",
+          "condition": "Only expired or earlier-source approval exists",
+          "question": "Obtain a current exact approval before applying the materially changed recovery source?",
+          "severity": "approval",
+          "canInfer": false
+        },
+        {
+          "id": "runtime-and-cost",
+          "condition": "Durable usage-window binding, monthly admission or service authority is unresolved",
+          "question": "Stop the affected operation without resetting usage, elevating directory privilege or increasing caps?",
+          "severity": "blocker",
+          "canInfer": true
+        }
+      ],
+      "validation": {
+        "level": "static",
+        "lastValidatedAt": "2026-11-09",
+        "expiresAt": null,
+        "methods": [
+          "Offline Bicep compilation and required NSG parameter-forwarding/binding assertions passed",
+          "Compiled-state comparison against v0.1.1 differed only in NSG parameter wiring, explicit preservation of current environment public-network denial/Search bypass denial, and descriptive metadata",
+          "Private keyless Search, unchanged service tiers and normalized source closure checks passed; no deployment or live-readiness claim",
+          "Final actual-binding Provider validation/what-if passed: both existing NSG IDs preserved, environment public access Disabled, Search bypass None, zero resource deletions; generated DNS/reader assignment and registry authentication policy remain post-apply checks",
+          "Actual approved 2026-11-09 apply failed at harbor-apis: WebSocket API-scoped policy rejected and support OpenAPI import rejected for undeclared unmatched path parameter. APIM service Succeeded; API Center absent. No full live acceptance.",
+          "Existing-account app ownership, SPA redirect configuration and two required app-role grants remain separate confirmed readiness blockers. No PIM/new tenant role was performed."
+        ],
+        "evidenceRefs": [
+          "infra/support-service-v0.1.2/artifact-manifest.json",
+          "infra/support-service-v0.1.2/Test-Package.ps1",
+          "infra/support-service-v0.1.2/README.md"
+        ]
+      },
+      "reuse": {
+        "strategy": "parameterize",
+        "revalidateWhen": [
+          "Any source, live subnet attachment, identity, date, service API, network or approval change"
+        ],
+        "updatePolicy": "Remain candidate until independent live acceptance; preserve approved prior versions and never infer their approval covers this source."
+      },
+      "owners": ["AzureIQ platform"],
       "supersedes": [],
       "supersededBy": null
     }

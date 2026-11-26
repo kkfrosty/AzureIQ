@@ -1,0 +1,30 @@
+[
+  {
+    "serviceId": "managed-endpoints",
+    "state": "operational",
+    "description": "Synthetic scenario: endpoint guidance is available. This is not device monitoring.",
+    "updatedAt": "2026-11-01T14:00:00+00:00",
+    "synthetic": true
+  },
+  {
+    "serviceId": "microsoft-365",
+    "state": "advisory",
+    "description": "Synthetic scenario: a sign-in advisory is being reviewed. No actual Microsoft service outage is asserted.",
+    "updatedAt": "2026-11-01T14:00:00+00:00",
+    "synthetic": true
+  },
+  {
+    "serviceId": "office-network",
+    "state": "operational",
+    "description": "Synthetic scenario: connectivity guidance is available. Harbor has not inspected your network.",
+    "updatedAt": "2026-11-01T14:00:00+00:00",
+    "synthetic": true
+  },
+  {
+    "serviceId": "support-portal",
+    "state": "operational",
+    "description": "Synthetic scenario: case preparation is available when the configured lab dependencies are ready.",
+    "updatedAt": "2026-11-01T14:00:00+00:00",
+    "synthetic": true
+  }
+]

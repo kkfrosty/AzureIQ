@@ -1,0 +1,116 @@
+@baseUrl = http://localhost:8080
+@gatewayToken = REPLACE_WITH_PRIVATE_BACKEND_GATEWAY_JWT
+@callerToken = REPLACE_WITH_APPROVED_CUSTOMER_JWT
+@proposalId = REPLACE_WITH_PROPOSAL_ID
+@proposalHash = REPLACE_WITH_EXACT_PROPOSAL_HASH
+@confirmationGrant = REPLACE_AFTER_DELIBERATE_HUMAN_CONFIRMATION
+@caseId = REPLACE_WITH_CALLER_OWNED_CASE_ID
+@sessionId = REPLACE_WITH_CALLER_OWNED_SESSION_ID
+@idempotencyKey = 00000000-0000-0000-0000-000000000010
+
+### Public bootstrap (append /support to baseUrl when configured behind APIM)
+GET {{baseUrl}}/v1/config
+
+### Liveness, not provider health
+GET {{baseUrl}}/health/live
+
+### Binding readiness, not a live-provider probe
+GET {{baseUrl}}/health/ready
+
+### Private backend examples use BOTH tokens; public APIM callers send only caller Authorization
+GET {{baseUrl}}/v1/customer
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+###
+GET {{baseUrl}}/v1/company
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+###
+GET {{baseUrl}}/v1/services
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+### Explicitly synthetic status
+GET {{baseUrl}}/v1/status/microsoft-365
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+###
+GET {{baseUrl}}/v1/knowledge/search?serviceId=microsoft-365&q=Harbor%20Outlook%20sign-in%20guidance
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+###
+GET {{baseUrl}}/v1/cases
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+###
+GET {{baseUrl}}/v1/cases/{{caseId}}
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+### This creates only an expiring proposal, not a case
+POST {{baseUrl}}/v1/case-proposals
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+Content-Type: application/json
+
+{"serviceId":"microsoft-365","subject":"Synthetic Outlook sign-in issue","summary":"Fictional test description only; no customer data.","impact":"low"}
+
+###
+GET {{baseUrl}}/v1/case-proposals/{{proposalId}}
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+### Deliberate human action only: review the exact proposal first, never execute as a model/MCP tool
+POST {{baseUrl}}/v1/case-proposals/{{proposalId}}/confirmation
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+Content-Type: application/json
+
+{"proposalHash":"{{proposalHash}}","intent":"create_case"}
+
+### Commit/retry only the exact original hash/grant and stable GUID key
+POST {{baseUrl}}/v1/case-proposals/{{proposalId}}/commit
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+Idempotency-Key: {{idempotencyKey}}
+Content-Type: application/json
+
+{"proposalHash":"{{proposalHash}}","confirmationGrant":"{{confirmationGrant}}"}
+
+###
+POST {{baseUrl}}/v1/chat/messages
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+Content-Type: application/json
+
+{"serviceId":"microsoft-365","message":"What safe Outlook sign-in checks does Harbor recommend?"}
+
+### Requires separate microphone/processing consent, reserves the bounded lab allowance
+POST {{baseUrl}}/v1/voice/sessions
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+Content-Type: application/json
+
+{"consent":true}
+
+###
+DELETE {{baseUrl}}/v1/voice/sessions/{{sessionId}}
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}
+
+### No upgrade: 400 (real WSS uses gateway JWT, approved Origin and two ticket subprotocols)
+GET {{baseUrl}}/voice/socket?sessionId={{sessionId}}
+Authorization: Bearer {{gatewayToken}}
+
+### Unauthorized request: must fail closed
+GET {{baseUrl}}/v1/cases
+
+### Unknown service: 404
+GET {{baseUrl}}/v1/status/not-a-harbor-service
+Authorization: Bearer {{gatewayToken}}
+X-Harbor-Caller-Authorization: Bearer {{callerToken}}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "currency": "USD",
+  "regionForIllustration": "eastus",
+  "priceObservedAt": "2026-11-04",
+  "monthlyProjectLimit": 400,
+  "maximumAggregateBillableLabHours": 200,
+  "initialProposedRunHours": 8,
+  "oneLabAtATime": true,
+  "admissionStatus": "blocked-pending-complete-meter-validation-and-live-benefit",
+  "verifiedReferenceMeters": [
+    { "service": "APIM Standard v2 primary unit", "unit": "hour", "unitPrice": 0.9589 },
+    { "service": "AI Search Basic one search unit", "unit": "hour", "unitPrice": 0.101 }
+  ],
+  "conditionalCatalog": {
+    "service": "API Center Standard",
+    "incrementalHourlyPriceIfEligibleLinkedBenefitVerified": 0,
+    "referenceHourlyPriceWithoutBenefit": 0.9575,
+    "activationAndBillingVerified": false,
+    "mustRemoveBeforeLinkedApim": true
+  },
+  "planningEnvelopeAt200Hours": {
+    "gateway": 191.78,
+    "search": 20.2,
+    "hostingAndInitializationReservation": 30,
+    "registryDnsPrivateConnectivityReservation": 15,
+    "telemetryStorageIdentityReservation": 15,
+    "modelAndVoiceReservation": 50,
+    "contingency": 50,
+    "proposedTotal": 371.98,
+    "amountNotYetAllocated": 28.02
+  },
+  "assumptionsNotPriceEvidence": [
+    "Reservation amounts are planning ceilings, not verified prices or guarantees.",
+    "Current Container Apps environment management or private networking meters must be checked for applicability; do not assume consumption hosting has no fixed charge.",
+    "One app replica at 0.25 vCPU and 0.5 GiB plus a bounded manual seed job; no dedicated workload profile.",
+    "One Basic Search replica and partition, lexical queries only, no semantic or embedding charges.",
+    "Application limits and remaining ledger balances must be verified before and after each run; voice and model unit rates and maxima remain unpriced.",
+    "No assumed free allowances, discounts, trial credits or provisioned throughput.",
+    "Meter all paid bootstrap, deletion delays and retained evidence through the billing period.",
+    "If the API Center benefit is absent, APIM, Search and API Center alone cost 403.48 at 200 hours; that window must be rejected or shortened."
+  ],
+  "admissionFormula": "recordedMonthToDate + conservativeUnbilledAndReserved + retainedForecast + proposedRunForecast + contingency <= 400",
+  "budgetAlertsStopCharges": false,
+  "teardownPolicyApproved": false,
+  "priceSource": "https://prices.azure.com/api/retail/prices"
+}

@@ -70,6 +70,17 @@ function Test-IsGeneratedWorkspacePath {
     return @($segments | Where-Object { $_ -in $excludedDirectoryNames }).Count -gt 0
 }
 
+function Get-WorkspaceJsonFiles {
+    param([string]$Directory)
+
+    Get-ChildItem -LiteralPath $Directory -Filter '*.json' -File -Force
+    foreach ($child in Get-ChildItem -LiteralPath $Directory -Directory -Force) {
+        if ($child.Name -notin $excludedDirectoryNames) {
+            Get-WorkspaceJsonFiles -Directory $child.FullName
+        }
+    }
+}
+
 function Get-FrontMatter {
     param(
         [Parameter(Mandatory)]
@@ -246,11 +257,9 @@ foreach ($supportDomainManifest in $supportDomainManifests) {
     }
 }
 
-$jsonFiles = @(Get-ChildItem -Path $workspaceRoot -Filter '*.json' -File -Recurse -Force | Where-Object {
-    -not (Test-IsGeneratedWorkspacePath -Path $_.FullName)
-})
+$jsonFiles = @(Get-WorkspaceJsonFiles -Directory $workspaceRoot)
 foreach ($jsonFile in $jsonFiles) {
-    Get-Content -Raw -LiteralPath $jsonFile.FullName | ConvertFrom-Json -Depth 100 | Out-Null
+    Get-Content -Raw -LiteralPath $jsonFile.FullName | ConvertFrom-Json -Depth 100 -AsHashtable | Out-Null
 }
 
 $artifactCatalogPath = Join-Path $workspaceRoot 'artifacts/catalog.json'
@@ -399,10 +408,19 @@ if (Test-Path -LiteralPath $localConfigurationPath -PathType Leaf) {
     ) | ForEach-Object Value | Sort-Object -Unique)
 
     if ($privateScopeIdentifiers.Count -gt 0) {
+        $ignoredLocalProfilePaths = @($localConfigurationPath)
+        foreach ($profileFile in Get-ChildItem -LiteralPath (Join-Path $workspaceRoot 'config') -Filter 'local.*.json' -File) {
+            $relativeProfile = [System.IO.Path]::GetRelativePath($workspaceRoot, $profileFile.FullName)
+            & git -C $workspaceRoot check-ignore --quiet -- $relativeProfile
+            if ($LASTEXITCODE -ne 0) {
+                throw "Private local profile must be ignored by Git: $relativeProfile"
+            }
+            $ignoredLocalProfilePaths += $profileFile.FullName
+        }
         $scopeLeakFiles = [System.Collections.Generic.List[string]]::new()
         $workspaceFiles = @(Get-ChildItem -Path $workspaceRoot -File -Recurse -Force | Where-Object {
             -not (Test-IsGeneratedWorkspacePath -Path $_.FullName) -and
-            $_.FullName -ne $localConfigurationPath
+            $_.FullName -notin $ignoredLocalProfilePaths
         })
 
         foreach ($workspaceFile in $workspaceFiles) {

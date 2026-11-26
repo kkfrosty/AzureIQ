@@ -2,7 +2,11 @@
 
 AzureIQ is a control workspace for creating, configuring, observing, diagnosing, and safely remediating an Azure estate. The goal is a central operational nervous system and supervised subscription manager, not an unrestricted bot with subscription-wide write access.
 
-**Current status:** architecture bootstrap. No Azure tenant, subscription, or resource has been connected or changed by this repository.
+**Current status:** supervised operations workspace with a deployed non-production
+Harbor reference stack. Provisioning is not full readiness: authenticated
+application, runtime lifecycle, native discovery and telemetry/alert acceptance
+still have gates. See the dated [Harbor operating guide](docs/harbor-operations-guide.md)
+for current evidence; private scope and effective commissioning remain local.
 
 ## Design Center
 
@@ -50,6 +54,30 @@ The [API Management support domain](support-domains/api-management/README.md) is
 ## Case Study
 
 [Waypoint Freight](case-study/WaypointFreight/README.md) is the local proving application: a .NET shipment API, integration tests, and browser client. The local milestone is validated with controlled fault scenarios; Azure App Service, API Management, observability, authentication, and VNet preparation remain gated by the deployment plan.
+
+## Harbor IT Services reference
+
+See the [deployed layout and operating guide](docs/harbor-operations-guide.md)
+for the current Harbor diagram, existing APIM AI Gateway controls, staged AI
+Gateway adoption path, user workflows, diagnostic evidence, and remaining
+readiness gates. Its dated live observations distinguish provisioning from
+authenticated acceptance.
+
+The [API Center Try it investigation guide](docs/api-center-try-it-client-credentials.md)
+records the client-credentials warning reproduction, portal versus credential
+access, and the evidence and verification steps needed to work through the case.
+
+The new [Harbor support application](case-study/SupportService/README.md)
+implements a fictional company-scoped text/voice client, protected APIs,
+confirmed cases, Search grounding, and Foundry integrations. Local test doubles
+verify application boundaries; they do not prove live provider connectivity.
+
+The [disposable infrastructure package](infra/support-service/README.md) is a
+cataloged candidate for Standard v2 plus linked API Center Standard, private
+dependencies, diagnostics, and repeatable removal/recreation. Native API Center
+MCP activation, the billing benefit, current compiler/provider validation and
+live telemetry/user-flow acceptance remain release gates. The project is not
+deployed or ready merely because the application builds.
 
 ## Execution Adapters
 

@@ -1,0 +1,17 @@
+<policies>
+  <inbound>
+    <base />
+    <validate-jwt header-name="Authorization" require-expiration-time="true" require-signed-tokens="true" failed-validation-httpcode="401">
+      <openid-config url="https://login.microsoftonline.com/__TENANT__/v2.0/.well-known/openid-configuration" />
+      <audiences><audience>__AUDIENCE__</audience><audience>__CLIENT_ID__</audience></audiences>
+      <required-claims>
+        <claim name="scp" match="any" separator=" "><value>__SCOPE__</value></claim>
+        <claim name="roles" match="any"><value>Support.Customer</value></claim>
+      </required-claims>
+    </validate-jwt>
+    <rate-limit-by-key calls="30" renewal-period="60" counter-key="@(context.Request.IpAddress)" />
+  </inbound>
+  <backend><forward-request timeout="60" buffer-response="false" /></backend>
+  <outbound><base /></outbound>
+  <on-error><base /></on-error>
+</policies>

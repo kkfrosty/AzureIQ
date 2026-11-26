@@ -1,0 +1,57 @@
+{
+  "$schema": "../../schemas/expected-inventory.schema.json",
+  "schemaVersion": 1,
+  "environmentBoundary": "resource-group",
+  "requiredOwnershipTags": {
+    "managedBy": "AzureIQ",
+    "lifecycle": "ephemeral",
+    "caseStudy": "HarborITServices"
+  },
+  "resources": [
+    { "type": "Microsoft.ManagedIdentity/userAssignedIdentities", "count": 2 },
+    { "type": "Microsoft.Network/networkSecurityGroups", "count": 1 },
+    { "type": "Microsoft.Network/virtualNetworks", "count": 1 },
+    { "type": "Microsoft.Network/privateEndpoints", "count": 3 },
+    { "type": "Microsoft.Network/networkInterfaces", "count": 3 },
+    { "type": "Microsoft.Network/privateDnsZones", "count": 6 },
+    { "type": "Microsoft.OperationalInsights/workspaces", "count": 1 },
+    { "type": "Microsoft.Insights/components", "count": 1 },
+    { "type": "Microsoft.ContainerRegistry/registries", "count": 1 },
+    { "type": "Microsoft.Storage/storageAccounts", "count": 1 },
+    { "type": "Microsoft.Search/searchServices", "count": 1 },
+    { "type": "Microsoft.CognitiveServices/accounts", "count": 1 },
+    { "type": "Microsoft.App/managedEnvironments", "count": 1 },
+    { "type": "Microsoft.App/containerApps", "count": 1 },
+    { "type": "Microsoft.App/jobs", "count": 1 },
+    { "type": "Microsoft.ApiManagement/service", "count": 1, "sourceOutput": "API_MANAGEMENT_NAME" },
+    { "type": "Microsoft.ApiCenter/services", "count": 1, "sourceOutput": "API_CENTER_NAME" },
+    { "type": "Microsoft.Insights/metricAlerts", "count": 1 },
+    { "type": "Microsoft.Authorization/roleAssignments", "count": 14 }
+  ],
+  "allowedChildResourcePrefixes": [
+    "Microsoft.ApiManagement/service/",
+    "Microsoft.ApiCenter/services/",
+    "Microsoft.Network/privateDnsZones/",
+    "Microsoft.Network/privateEndpoints/",
+    "Microsoft.Storage/storageAccounts/",
+    "Microsoft.CognitiveServices/accounts/",
+    "Microsoft.Insights/diagnosticSettings",
+    "Microsoft.Resources/deployments"
+  ],
+  "externalResources": [],
+  "teardownBlockers": [
+    "any active resource ID outside the approved expanded EXPECTED_RESOURCE_IDS inventory",
+    "unknown ownership, tag mismatch, resource lock or concurrent drift",
+    "retained data not covered by the approved evidence plan",
+    "API Center Standard left active after deleting its eligible linked APIM",
+    "untracked managed environment infrastructure resource group",
+    "shared identity, app registration, action group or DNS dependency"
+  ],
+  "softDelete": {
+    "Microsoft.ApiManagement/service": {
+      "retentionHours": 48,
+      "purgeRequiresSeparateApproval": true,
+      "nextRunUsesUniqueEnvironmentId": true
+    }
+  }
+}

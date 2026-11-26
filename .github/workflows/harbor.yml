@@ -1,0 +1,61 @@
+name: Harbor local contracts
+
+on:
+  pull_request:
+    paths:
+      - 'case-study/SupportService/**'
+      - 'infra/support-service/**'
+      - '.github/workflows/harbor.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'case-study/SupportService/**'
+      - 'infra/support-service/**'
+      - '.github/workflows/harbor.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 10.0.403
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.x
+          cache: npm
+          cache-dependency-path: case-study/SupportService/src/harbor-support-web/package-lock.json
+      - name: Restore frontend
+        working-directory: case-study/SupportService/src/harbor-support-web
+        run: npm ci
+      - name: Test and build frontend
+        working-directory: case-study/SupportService/src/harbor-support-web
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
+      - name: Restore backend and tests
+        working-directory: case-study/SupportService
+        run: dotnet restore SupportService.slnx --locked-mode
+      - name: Build and test backend
+        working-directory: case-study/SupportService
+        run: |
+          dotnet build SupportService.slnx --configuration Release --no-restore
+          dotnet test --solution SupportService.slnx --configuration Release --no-build --no-restore
+
+  infrastructure:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install pinned Bicep compiler
+        run: az bicep install --version v0.48.1
+      - name: Validate candidate package offline
+        shell: pwsh
+        run: .\infra\support-service\Test-Package.ps1

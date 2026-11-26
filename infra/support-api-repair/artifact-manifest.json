@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "harbor.support-api-repair",
+  "version": "0.1.0",
+  "status": "candidate",
+  "entryPoint": "infra/support-api-repair/main.bicep",
+  "files": [
+    { "path": "infra/support-api-repair/main.bicep", "sha256": "76de66978ee48ec6b7bc9d80f3a740b0a2a59602ab87f475f5613a91e8565824" },
+    { "path": "infra/support-api-repair/remaining-apis.bicep", "sha256": "5d543e3fe5fd49827a1fbf0a17974f19260c4b535a0f77867a11b0f7ab39df66" },
+    { "path": "infra/support-api-repair/README.md", "sha256": "31befb9d27b7f342fcc52d60e8c3f960321444ff0288cf4aaeda4bbf33f36db7" },
+    { "path": "infra/support-api-repair/Test-Package.ps1", "sha256": "c9502843116bf8852782824fd42e0a98bcb9bac207934441dbaa72176402293d" },
+    { "path": "infra/support-service/api-center.bicep", "sha256": "c41a91537cfa24670e158d4712b062aeafdfb03f571ed9879630d493dfa30ef3" },
+    { "path": "infra/support-service/policies/voice.xml", "sha256": "1cc5ee2f098cfdaf77326523e894f396f2cedc148b015c2c754c050ccfe76c3d" },
+    { "path": "infra/support-service/policies/support.xml", "sha256": "46a84c81bd0ab393f6296da24754ae7c99d33ec12bc71ba04b28d8bcea1289f5" },
+    { "path": "infra/support-service/policies/mcp.xml", "sha256": "6caa479d0f0dc0a1b268242b2418074bf71b53c4ff7e18025a3a958ab1a8d087" }
+  ],
+  "baseline": "Actual APIM API import and API-scoped WebSocket policy failed provider validation despite successful compilation/what-if.",
+  "expectedImprovement": "Import the same public operations without invalid runtime fallback and apply unchanged protections at handshake-operation scope; use live provider's object-shaped MCP endpoints.",
+  "acceptance": "Local policy-scope/path-parameter/MCP-shape checks, future-export runtime404 regression and actual child readbacks; no image rebuild or foundation change.",
+  "validation": {
+    "compilation": "passed",
+    "regressions": "passed",
+    "integrationTests": "26 passed,0 failed",
+    "providerValidation": "passed-read-only-final-MCP-shape",
+    "liveAppliedSubset": "Support import and handshake policy Succeeded and read back",
+    "remainingMcp": "Final object-shape correction not applied before fixed lab cutoff",
+    "readiness": "not-ready"
+  }
+}

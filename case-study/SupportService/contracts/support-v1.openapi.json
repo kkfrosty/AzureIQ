@@ -1,0 +1,1307 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Harbor IT Services Support",
+    "description": "Fictional company support. Public APIM caller JWT; backend independently validates gateway role and forwarded caller JWT. No confirmation issuance is an assistant tool.",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "/support"
+    }
+  ],
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "GetLiveness",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonymousTypeOfstring"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "GetReadiness",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "503": {
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/v1/config": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "operationId": "GetRuntimeConfig",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuntimeConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/voice/socket": {
+      "get": {
+        "tags": [
+          "Voice"
+        ],
+        "description": "Private WSS /voice/socket?sessionId=<opaque-id>; fixed APIM handshake /support/voice?sessionId=<opaque-id>. Backend gateway JWT plus approved Origin and Sec-WebSocket-Protocol: harbor.voice.v1, harbor.ticket.<opaque-ticket>. Only the non-secret sessionId is permitted in the URL.",
+        "operationId": "ConnectVoiceRelay",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "101": {
+            "description": "Switching Protocols"
+          }
+        },
+        "security": [
+          {
+            "gatewayBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/{unmatched}": {
+      "get": {
+        "tags": [
+          "Harbor.Support.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Harbor.Support.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Harbor.Support.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Harbor.Support.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Harbor.Support.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "Harbor.Support.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "Harbor.Support.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/customer": {
+      "get": {
+        "tags": [
+          "Customer"
+        ],
+        "operationId": "GetCustomer",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerInfo"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/company": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "operationId": "GetCompany",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyInfo"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/services": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "operationId": "ListServices",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceInfo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/status/{serviceId}": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "operationId": "GetSyntheticServiceStatus",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyntheticStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/knowledge/search": {
+      "get": {
+        "tags": [
+          "Knowledge"
+        ],
+        "operationId": "SearchCompanyKnowledge",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/cases": {
+      "get": {
+        "tags": [
+          "Cases"
+        ],
+        "operationId": "ListMyCases",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SupportCase"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/cases/{id}": {
+      "get": {
+        "tags": [
+          "Cases"
+        ],
+        "operationId": "GetMyCase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportCase"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/case-proposals/{id}": {
+      "get": {
+        "tags": [
+          "Cases"
+        ],
+        "operationId": "GetMyCaseProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseProposal"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/case-proposals": {
+      "post": {
+        "tags": [
+          "Cases"
+        ],
+        "operationId": "PrepareCase",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrepareCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseProposal"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/case-proposals/{id}/confirmation": {
+      "post": {
+        "tags": [
+          "Human confirmation"
+        ],
+        "description": "Separate deliberate human action only. Never expose this operation as a model, voice, or MCP tool.",
+        "operationId": "ConfirmCaseProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmationGrant"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/case-proposals/{id}/commit": {
+      "post": {
+        "tags": [
+          "Cases"
+        ],
+        "description": "Requires exact proposalHash, a separate human confirmation grant, and a GUID Idempotency-Key header. Exact retries return the original case.",
+        "operationId": "CommitConfirmedCase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommitCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitCaseResult"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitCaseResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/chat/messages": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "operationId": "SendChatMessage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAnswer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/voice/sessions": {
+      "post": {
+        "tags": [
+          "Voice"
+        ],
+        "description": "Consent required. Reserves durable bounded usage; issues a 30-second single-use opaque subprotocol ticket, not an upstream credential.",
+        "operationId": "CreateVoiceSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceSessionTicket"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/voice/sessions/{id}": {
+      "delete": {
+        "tags": [
+          "Voice"
+        ],
+        "operationId": "RevokeMyVoiceSession",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "customerBearer": [ ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnonymousTypeOfstring": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CaseProposal": {
+        "required": [
+          "id",
+          "serviceId",
+          "subject",
+          "summary",
+          "impact",
+          "proposalHash",
+          "createdAt",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          },
+          "proposalHash": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatAnswer": {
+        "required": [
+          "message",
+          "citations",
+          "provider",
+          "syntheticCompany"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            }
+          },
+          "provider": {
+            "type": "string"
+          },
+          "syntheticCompany": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatMessageRequest": {
+        "required": [
+          "serviceId",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Citation": {
+        "required": [
+          "docId",
+          "title",
+          "sourceRef",
+          "docVersion",
+          "contentHash",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "docId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sourceRef": {
+            "type": "string"
+          },
+          "docVersion": {
+            "type": "string"
+          },
+          "contentHash": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommitCaseRequest": {
+        "required": [
+          "proposalHash",
+          "confirmationGrant"
+        ],
+        "type": "object",
+        "properties": {
+          "proposalHash": {
+            "type": "string"
+          },
+          "confirmationGrant": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommitCaseResult": {
+        "required": [
+          "case",
+          "replayed"
+        ],
+        "type": "object",
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/SupportCase"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CompanyInfo": {
+        "required": [
+          "companyId",
+          "name",
+          "description",
+          "synthetic",
+          "privacyNotice"
+        ],
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "privacyNotice": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfirmationGrant": {
+        "required": [
+          "proposalId",
+          "proposalHash",
+          "grant",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": "string"
+          },
+          "proposalHash": {
+            "type": "string"
+          },
+          "grant": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfirmationRequest": {
+        "required": [
+          "proposalHash",
+          "intent"
+        ],
+        "type": "object",
+        "properties": {
+          "proposalHash": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CustomerInfo": {
+        "required": [
+          "companyId",
+          "authorizationExpiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "string"
+          },
+          "authorizationExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KnowledgeDocument": {
+        "required": [
+          "docId",
+          "companyId",
+          "serviceId",
+          "title",
+          "content",
+          "sourceRef",
+          "docVersion",
+          "contentHash",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "docId": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "sourceRef": {
+            "type": "string"
+          },
+          "docVersion": {
+            "type": "string"
+          },
+          "contentHash": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KnowledgeResult": {
+        "required": [
+          "companyId",
+          "documents",
+          "citations"
+        ],
+        "type": "object",
+        "properties": {
+          "companyId": {
+            "type": "string"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeDocument"
+            }
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "PrepareCaseRequest": {
+        "required": [
+          "serviceId",
+          "subject",
+          "summary",
+          "impact"
+        ],
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RuntimeAuthConfig": {
+        "required": [
+          "configured",
+          "authority",
+          "clientId",
+          "scope",
+          "redirectPath"
+        ],
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "authority": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "redirectPath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RuntimeCapabilities": {
+        "required": [
+          "cases",
+          "knowledge",
+          "text",
+          "voice",
+          "providerMode"
+        ],
+        "type": "object",
+        "properties": {
+          "cases": {
+            "type": "boolean"
+          },
+          "knowledge": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "boolean"
+          },
+          "voice": {
+            "type": "boolean"
+          },
+          "providerMode": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RuntimeConfig": {
+        "required": [
+          "companyName",
+          "fictionalDemo",
+          "auth",
+          "capabilities",
+          "textMaxChars",
+          "voiceSessionSeconds"
+        ],
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string"
+          },
+          "fictionalDemo": {
+            "type": "boolean"
+          },
+          "auth": {
+            "$ref": "#/components/schemas/RuntimeAuthConfig"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/RuntimeCapabilities"
+          },
+          "textMaxChars": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "format": "int32"
+          },
+          "voiceSessionSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceInfo": {
+        "required": [
+          "serviceId",
+          "name",
+          "description",
+          "topics"
+        ],
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "topics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupportCase": {
+        "required": [
+          "id",
+          "serviceId",
+          "subject",
+          "summary",
+          "impact",
+          "state",
+          "createdAt",
+          "synthetic"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "synthetic": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SyntheticStatus": {
+        "required": [
+          "serviceId",
+          "state",
+          "description",
+          "updatedAt",
+          "synthetic"
+        ],
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "synthetic": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoiceSessionRequest": {
+        "required": [
+          "consent"
+        ],
+        "type": "object",
+        "properties": {
+          "consent": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoiceSessionTicket": {
+        "required": [
+          "sessionId",
+          "ticket",
+          "ticketExpiresAt",
+          "sessionExpiresAt",
+          "webSocketUrl",
+          "protocol",
+          "provider"
+        ],
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "ticket": {
+            "type": "string"
+          },
+          "ticketExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sessionExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "webSocketUrl": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "customerBearer": {
+        "type": "http",
+        "description": "Public APIM: delegated Support.Access and Support.Customer in the approved tenant; the server maps that role to Harbor. APIM forwards the original token in X-Harbor-Caller-Authorization.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "gatewayBearer": {
+        "type": "http",
+        "description": "Private backend: app-only token with Support.Gateway in Authorization; never a browser credential.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Configuration"
+    },
+    {
+      "name": "Voice"
+    },
+    {
+      "name": "Harbor.Support.Api"
+    },
+    {
+      "name": "Customer"
+    },
+    {
+      "name": "Company"
+    },
+    {
+      "name": "Status"
+    },
+    {
+      "name": "Knowledge"
+    },
+    {
+      "name": "Cases"
+    },
+    {
+      "name": "Human confirmation"
+    },
+    {
+      "name": "Assistant"
+    }
+  ]
+}

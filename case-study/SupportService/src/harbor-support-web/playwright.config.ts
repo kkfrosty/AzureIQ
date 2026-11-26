@@ -1,0 +1,21 @@
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: false,
+  workers: 1,
+  reporter: 'list',
+  use: {
+    baseURL: 'http://127.0.0.1:4178',
+    browserName: 'chromium',
+    channel: 'msedge',
+    headless: true,
+    colorScheme: 'light',
+  },
+  webServer: {
+    command: 'npm run dev -- --host 127.0.0.1 --port 4178 --strictPort --base /support/',
+    url: 'http://127.0.0.1:4178/support/',
+    reuseExistingServer: false,
+    timeout: 30_000,
+  },
+});

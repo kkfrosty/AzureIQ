@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Harbor: Azure CLI sign-in",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"$ErrorActionPreference='Stop'; $p=Get-Content -LiteralPath 'config\\local.azureiq.json' -Raw | ConvertFrom-Json; if(@($p.scope.subscriptionIds).Count -ne 1 -or -not $p.scope.tenantId -or -not $p.identity.interactivePrincipal){throw 'Private Harbor target is incomplete.'}; az login --tenant $p.scope.tenantId --use-device-code --output none; if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}; $accounts=az account list --all --only-show-errors --output json | ConvertFrom-Json; if($LASTEXITCODE -ne 0){throw 'Account lookup failed.'}; $target=@($accounts|Where-Object {$_.id -eq $p.scope.subscriptionIds[0] -and $_.tenantId -eq $p.scope.tenantId -and $_.user.name -eq $p.identity.interactivePrincipal -and $_.state -eq 'Enabled'}); if($target.Count -ne 1){throw 'Signed-in account does not match Harbor; no target selection or resource operation performed.'}; az account set --subscription $target[0].id --only-show-errors; if($LASTEXITCODE -ne 0){throw 'Harbor selection failed.'}; $c=az account show --only-show-errors --output json | ConvertFrom-Json; if($LASTEXITCODE -ne 0 -or $c.id -ne $p.scope.subscriptionIds[0] -or $c.tenantId -ne $p.scope.tenantId -or $c.user.name -ne $p.identity.interactivePrincipal){throw 'Harbor context verification failed.'}; Write-Host 'VERIFIED: Harbor CLI sign-in and selected target match. No Azure resource changed.'"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

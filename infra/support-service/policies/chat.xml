@@ -1,0 +1,27 @@
+<policies>
+  <inbound>
+    <base />
+    <validate-jwt header-name="Authorization" require-expiration-time="true" require-signed-tokens="true" failed-validation-httpcode="401">
+      <openid-config url="https://login.microsoftonline.com/__TENANT__/v2.0/.well-known/openid-configuration" />
+      <audiences><audience>__AUDIENCE__</audience><audience>__CLIENT_ID__</audience></audiences>
+      <required-claims>
+        <claim name="roles" match="any"><value>Model.Invoke</value></claim>
+        <claim name="oid" match="all"><value>__BACKEND_OBJECT_ID__</value></claim>
+      </required-claims>
+    </validate-jwt>
+    <rate-limit-by-key calls="20" renewal-period="60" counter-key="__BACKEND_OBJECT_ID__" />
+    <quota-by-key calls="200" renewal-period="86400" counter-key="__BACKEND_OBJECT_ID__" />
+    <azure-openai-token-limit tokens-per-minute="2000" counter-key="__BACKEND_OBJECT_ID__" estimate-prompt-tokens="true" />
+    <authentication-managed-identity resource="https://cognitiveservices.azure.com" ignore-error="false" />
+    <rewrite-uri template="/openai/deployments/__DEPLOYMENT__/chat/completions?api-version=2024-10-21" copy-unmatched-params="false" />
+  </inbound>
+  <backend><forward-request timeout="60" buffer-response="false" /></backend>
+  <outbound><base /></outbound>
+  <on-error>
+    <return-response>
+      <set-status code="@(context.Response.StatusCode &gt;= 400 ? context.Response.StatusCode : 502)" reason="Model gateway failed" />
+      <set-header name="content-type" exists-action="override"><value>application/problem+json</value></set-header>
+      <set-body>@("{\"title\":\"The model gateway could not complete the request\",\"traceId\":\"" + context.RequestId.ToString() + "\"}")</set-body>
+    </return-response>
+  </on-error>
+</policies>

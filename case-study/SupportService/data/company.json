@@ -1,0 +1,7 @@
+{
+  "companyId": "harbor-it-services",
+  "name": "Harbor IT Services",
+  "description": "Fictional managed IT support for small businesses. This learning application explains approved services and prepares synthetic support cases; it never performs a repair.",
+  "synthetic": true,
+  "privacyNotice": "Do not share passwords, access tokens, payment details, or personal documents. Audio is relayed for the active session, not recorded by this application. Cases contain only the summary you explicitly confirm."
+}

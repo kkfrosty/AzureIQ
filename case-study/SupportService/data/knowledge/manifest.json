@@ -1,0 +1,15 @@
+{
+  "companyId": "harbor-it-services",
+  "docVersion": "1.0",
+  "updatedAt": "2026-11-01T14:00:00+00:00",
+  "documents": [
+    { "docId": "hbr-managed-endpoints", "serviceId": "managed-endpoints", "title": "Managed endpoints and safe application checks" },
+    { "docId": "hbr-microsoft-365", "serviceId": "microsoft-365", "title": "Microsoft 365 sign-in and access guidance" },
+    { "docId": "hbr-office-connectivity", "serviceId": "office-network", "title": "Safe office connectivity checks" },
+    { "docId": "hbr-support-portal", "serviceId": "support-portal", "title": "Using the Harbor support portal" },
+    { "docId": "hbr-services", "serviceId": "support-portal", "title": "Harbor company FAQs and service descriptions" },
+    { "docId": "hbr-boundaries", "serviceId": "support-portal", "title": "Support boundaries and unsupported actions" },
+    { "docId": "hbr-privacy", "serviceId": "support-portal", "title": "Privacy and information minimization" },
+    { "docId": "hbr-case-process", "serviceId": "support-portal", "title": "Case preparation, confirmation, and escalation" }
+  ]
+}

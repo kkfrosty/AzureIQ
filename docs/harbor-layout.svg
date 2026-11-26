@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1140" viewBox="0 0 1500 1140" role="img" aria-labelledby="title description">
+  <title id="title">Harbor layout and the existing APIM AI Gateway</title>
+  <desc id="description">AzureIQ operates a separate management plane. Customers enter public APIM support, MCP and voice APIs. APIM reaches a private Container Apps backend. The backend retrieves Search evidence, stores cases and usage in Table storage, and calls the same APIM instance's AI Gateway before private Foundry text inference. Voice uses a separate direct relay to Foundry. API Center provides metadata discovery, not execution. Azure Monitor receives telemetry. The deployment exists but authenticated end-to-end readiness is not yet verified.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#334155"/></marker>
+    <style>
+      text { font-family: "Segoe UI", Arial, sans-serif; fill: #000000; }
+      .title { font-size: 28px; font-weight: 700; }
+      .heading { font-size: 19px; font-weight: 650; }
+      .body { font-size: 16px; }
+      .small { font-size: 14px; }
+      .boundary { fill: none; stroke: #64748b; stroke-width: 2; stroke-dasharray: 8 5; }
+      .blue { fill: #cfe4fa; stroke: #0078d4; stroke-width: 2; }
+      .green { fill: #dff6dd; stroke: #107c10; stroke-width: 2; }
+      .purple { fill: #e8daef; stroke: #5c2d91; stroke-width: 2; }
+      .neutral { fill: #f3f2f1; stroke: #64748b; stroke-width: 2; }
+      .flow { fill: none; stroke: #334155; stroke-width: 2; marker-end: url(#arrow); }
+      .metadata { fill: none; stroke: #64748b; stroke-width: 2; stroke-dasharray: 7 5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1500" height="1140" fill="#ffffff"/>
+  <text x="35" y="42" class="title">Harbor: deployed layout and AI Gateway path</text>
+  <text x="35" y="71" class="body">Read-only evidence: November 10, 2026 | Provisioned does not mean fully accepted | No Azure changes made for this diagram</text>
+
+  <rect x="30" y="95" width="1440" height="140" rx="14" class="boundary"/>
+  <text x="50" y="121" class="heading">OPERATIONS PLANE - separate from customer application authority</text>
+  <rect x="50" y="140" width="350" height="75" rx="10" class="blue"/>
+  <text x="67" y="167" class="heading">You + GitHub Copilot / AzureIQ</text>
+  <text x="67" y="193" class="body">Architecture, change, diagnosis, verification</text>
+  <rect x="455" y="140" width="360" height="75" rx="10" class="neutral"/>
+  <text x="472" y="167" class="heading">Agents, skills, artifacts and runbooks</text>
+  <text x="472" y="193" class="body">Versioned intent + live evidence</text>
+  <rect x="870" y="140" width="570" height="75" rx="10" class="neutral"/>
+  <text x="887" y="167" class="heading">Existing Azure tools + approved scope</text>
+  <text x="887" y="193" class="body">Management APIs and telemetry; writes separated from diagnosis</text>
+  <path d="M400 178H455M815 178H870" class="flow"/>
+
+  <rect x="340" y="275" width="820" height="235" rx="15" class="boundary"/>
+  <text x="360" y="305" class="heading">ONE APIM STANDARD v2 INSTANCE - public HTTPS, outbound VNet integration</text>
+  <rect x="360" y="330" width="275" height="155" rx="10" class="blue"/>
+  <text x="378" y="359" class="heading">Customer / tool entry points</text>
+  <text x="378" y="389" class="body">/support - browser + REST</text>
+  <text x="378" y="416" class="body">/support-mcp/mcp - 7 tools</text>
+  <text x="378" y="443" class="body">/support/voice - WSS handshake</text>
+  <text x="378" y="470" class="small">JWT / role / scope / rate controls</text>
+  <rect x="785" y="330" width="350" height="155" rx="10" class="green"/>
+  <text x="803" y="359" class="heading">Existing AI Gateway: /ai/chat</text>
+  <text x="803" y="389" class="body">Backend MI + Model.Invoke + exact oid</text>
+  <text x="803" y="416" class="body">2,000 tokens/min; request rate/quota</text>
+  <text x="803" y="443" class="body">APIM MI authenticates to Foundry</text>
+  <text x="803" y="470" class="small">No token metrics, pool or cache yet</text>
+
+  <rect x="40" y="330" width="250" height="145" rx="10" class="blue"/>
+  <text x="58" y="360" class="heading">Customer browser / MCP client</text>
+  <text x="58" y="391" class="body">Text, voice, caller-owned cases</text>
+  <text x="58" y="420" class="body">Human case confirmation</text>
+  <text x="58" y="449" class="body">No Azure-management tools</text>
+  <path d="M290 400H360" class="flow"/>
+  <rect x="40" y="525" width="250" height="100" rx="10" class="purple"/>
+  <text x="58" y="554" class="heading">Microsoft Entra ID</text>
+  <text x="58" y="582" class="body">Browser PKCE + managed identities</text>
+  <text x="58" y="609" class="small">SPA redirect / 2 app grants still missing</text>
+  <path d="M165 475V525" class="flow"/>
+  <text x="176" y="506" class="small">Sign-in</text>
+
+  <rect x="1200" y="330" width="260" height="155" rx="10" class="purple"/>
+  <text x="1218" y="359" class="heading">API Center Standard</text>
+  <text x="1218" y="389" class="body">API / MCP metadata discovery</text>
+  <text x="1218" y="416" class="body">Source sync still in progress</text>
+  <text x="1218" y="443" class="body">Not a request proxy</text>
+  <text x="1218" y="470" class="small">Native discovery activation unverified</text>
+  <path d="M635 333V255H1330V330" class="metadata"/>
+  <rect x="850" y="244" width="180" height="22" fill="#ffffff"/>
+  <text x="861" y="260" class="small">Catalog metadata only</text>
+
+  <rect x="340" y="560" width="1120" height="365" rx="15" class="boundary"/>
+  <text x="360" y="591" class="heading">PRIVATE SERVICE PATHS - VNet, private endpoints + private DNS</text>
+  <rect x="380" y="630" width="320" height="155" rx="10" class="blue"/>
+  <text x="398" y="660" class="heading">Container Apps: Harbor backend</text>
+  <text x="398" y="690" class="body">Grounding / ownership / case rules</text>
+  <text x="398" y="718" class="body">Durable usage accounting + voice relay</text>
+  <text x="398" y="746" class="body">Internal environment; one replica</text>
+  <text x="398" y="773" class="small">Configured inference window is expired</text>
+  <rect x="1080" y="630" width="350" height="155" rx="10" class="green"/>
+  <text x="1098" y="660" class="heading">Private Foundry AI Services</text>
+  <text x="1098" y="690" class="body">Text: gpt-4.1-mini / harbor-chat</text>
+  <text x="1098" y="718" class="body">Voice Live: separate WSS API</text>
+  <text x="1098" y="746" class="body">Public access + local auth disabled</text>
+  <text x="1098" y="773" class="small">One model endpoint; no failover pool</text>
+  <rect x="760" y="825" width="280" height="75" rx="10" class="purple"/>
+  <text x="778" y="853" class="heading">Private AI Search Basic</text>
+  <text x="778" y="881" class="body">Curated knowledge / citations</text>
+  <rect x="1100" y="825" width="330" height="75" rx="10" class="purple"/>
+  <text x="1118" y="853" class="heading">Private Azure Table storage</text>
+  <text x="1118" y="881" class="body">Caller-owned cases + durable usage</text>
+  <path d="M500 485V630" class="flow"/>
+  <text x="512" y="545" class="small">APIM MI + forwarded caller JWT</text>
+  <path d="M650 630V535H840V485" class="flow"/>
+  <rect x="654" y="516" width="150" height="19" fill="#ffffff"/>
+  <text x="659" y="531" class="small">Grounded text request</text>
+  <path d="M1000 485V535H1250V630" class="flow"/>
+  <text x="1110" y="525" class="small">APIM MI / private HTTPS</text>
+  <path d="M700 720H1080" class="metadata"/>
+  <rect x="730" y="690" width="320" height="22" fill="#ffffff"/>
+  <text x="738" y="706" class="small">Voice relay WSS - not the /ai/chat policy path</text>
+  <path d="M600 785V862H760" class="flow"/>
+  <path d="M680 785V805H1265V825" class="flow"/>
+  <text x="780" y="796" class="small">Managed identity; data-plane RBAC</text>
+
+  <rect x="40" y="675" width="250" height="110" rx="10" class="neutral"/>
+  <text x="58" y="705" class="heading">Build / initialization support</text>
+  <text x="58" y="734" class="body">ACR Basic: immutable image</text>
+  <text x="58" y="762" class="body">Manual seed job; do not reseed</text>
+  <path d="M290 747H380" class="metadata"/>
+  <text x="294" y="731" class="small">Image</text>
+
+  <rect x="340" y="985" width="1120" height="110" rx="10" class="neutral"/>
+  <text x="360" y="1015" class="heading">Azure Monitor + Application Insights + Log Analytics</text>
+  <text x="360" y="1044" class="body">Gateway requests, app spans, platform logs, metrics and Activity Log; real ingestion observed</text>
+  <text x="360" y="1073" class="body">Alerts / action group: delivery still to verify | Token/audio coverage and full correlation still to prove</text>
+  <path d="M900 925V985" class="metadata"/>
+  <text x="912" y="961" class="small">Dependency / platform telemetry</text>
+  <path d="M1158 490H1480V1025H1460" class="metadata"/>
+  <text x="1168" y="552" class="small">Gateway telemetry</text>
+  <text x="40" y="1030" class="small">Solid arrows: request/dependency path</text>
+  <text x="40" y="1057" class="small">Dashed arrows: labeled metadata,</text>
+  <text x="40" y="1078" class="small">voice relay, image or telemetry paths</text>
+  <text x="35" y="1126" class="small">Readiness: NOT fully accepted. Existing Entra app setup, runtime lifecycle, native discovery, token metrics, alerts and fault-tolerance tests remain.</text>
+</svg>

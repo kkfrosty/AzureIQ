@@ -1,0 +1,39 @@
+{
+  "name": "harbor-support-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "preview": "vite preview --host 127.0.0.1",
+    "contracts": "openapi-typescript ../../contracts/support-v1.openapi.json -o src/api/schema.d.ts"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "4.25.0",
+    "@fluentui/react-components": "9.70.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "24.10.0",
+    "@types/react": "19.1.16",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.4",
+    "jsdom": "27.0.0",
+    "openapi-typescript": "7.10.1",
+    "typescript": "5.9.3",
+    "vite": "7.1.7",
+    "vitest": "3.2.4"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

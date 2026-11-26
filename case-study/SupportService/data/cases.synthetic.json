@@ -1,0 +1,28 @@
+[
+  {
+    "ownerAlias": "fixture-owner-a",
+    "case": {
+      "id": "10000000000000000000000000000001",
+      "serviceId": "office-network",
+      "subject": "Office Wi-Fi intermittently disconnects",
+      "summary": "Synthetic fixture: two enrolled laptops lose the office Wi-Fi connection. No repair has been performed.",
+      "impact": "medium",
+      "state": "open",
+      "createdAt": "2026-11-01T13:00:00+00:00",
+      "synthetic": true
+    }
+  },
+  {
+    "ownerAlias": "fixture-owner-b",
+    "case": {
+      "id": "20000000000000000000000000000002",
+      "serviceId": "microsoft-365",
+      "subject": "Collaboration app sign-in question",
+      "summary": "Synthetic fixture owned by a different customer. No credentials are included.",
+      "impact": "low",
+      "state": "open",
+      "createdAt": "2026-11-01T13:05:00+00:00",
+      "synthetic": true
+    }
+  }
+]

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "harbor.support-ecosystem",
+  "version": "0.1.1",
+  "status": "candidate",
+  "entryPoint": "infra/support-service-v0.1.1/main.bicep",
+  "foundationEntryPoint": "infra/support-service-v0.1.1/foundation-main.bicep",
+  "files": [
+    {
+      "path": "infra/support-service/api-center.bicep",
+      "sha256": "c41a91537cfa24670e158d4712b062aeafdfb03f571ed9879630d493dfa30ef3"
+    },
+    {
+      "path": "infra/support-service/container-dns.bicep",
+      "sha256": "73d02e64b162c0636015c7408913b3f8cbe841abc6f510d7e2135604245ea786"
+    },
+    {
+      "path": "infra/support-service/cost-envelope.json",
+      "sha256": "225ee039824aaf9aa4b6d2fde199ec8d500c828d5bdbd0a913fb8b23c8aa8533"
+    },
+    {
+      "path": "infra/support-service-v0.1.1/ecosystem.bicep",
+      "sha256": "9140b664dc4a52a3c29d6d5e13abf0b842f09dfea78d320dfd383ab8ac47a641"
+    },
+    {
+      "path": "infra/support-service/expected-inventory.json",
+      "sha256": "3c7285adaa0c0f08f316ce8e0fd22b8b844afa004fa0d9480e6b09f2670c04ce"
+    },
+    {
+      "path": "infra/support-service-v0.1.1/foundation-main.bicep",
+      "sha256": "b7a10becf6ad7a9708097d68557976b75663c9b996b9b11ad687905ead001b25"
+    },
+    {
+      "path": "infra/support-service-v0.1.1/foundation.bicep",
+      "sha256": "53f0a6eb502e556144a0e3ccad420d8a9f981b4e88039131f183ec45a5eb1fc7"
+    },
+    {
+      "path": "infra/support-service/gateway-apis.bicep",
+      "sha256": "6d454b64db0894487056ba75d85696c075da2893f30bde82488387bb249385f6"
+    },
+    {
+      "path": "infra/support-service-v0.1.1/main.bicep",
+      "sha256": "2dbf22d0c5c2d5e59261e94e9d89be71c971117d6fca3bd1bb1538235aa18081"
+    },
+    {
+      "path": "infra/support-service/policies/chat.xml",
+      "sha256": "9d989018fa6e6d81e98ffe054fdc3dece627b30399c9c515021588d7fbfe3d3e"
+    },
+    {
+      "path": "infra/support-service/policies/mcp.xml",
+      "sha256": "6caa479d0f0dc0a1b268242b2418074bf71b53c4ff7e18025a3a958ab1a8d087"
+    },
+    {
+      "path": "infra/support-service/policies/support.xml",
+      "sha256": "46a84c81bd0ab393f6296da24754ae7c99d33ec12bc71ba04b28d8bcea1289f5"
+    },
+    {
+      "path": "infra/support-service/policies/voice.xml",
+      "sha256": "1cc5ee2f098cfdaf77326523e894f396f2cedc148b015c2c754c050ccfe76c3d"
+    },
+    {
+      "path": "infra/support-service/private-endpoint.bicep",
+      "sha256": "e004af7706bdf88ae4e8aba675f470a0fe6dbfa8bfdbcba4e42b3bff023cf802"
+    },
+    {
+      "path": "infra/support-service/README.md",
+      "sha256": "453106db2efd960d22b228ca70b649006e216b31bdfc9377d184b07397ae694c"
+    },
+    {
+      "path": "infra/support-service/Test-Package.ps1",
+      "sha256": "e5f633471d38df6a1e134a6cf26c2557c065dd1cf139407c9cf39a37c313b5df"
+    },
+    {
+      "path": "infra/support-service/Update-PackageManifest.ps1",
+      "sha256": "588e33d1c6cbf8c0ac95c0d266a80ac98ac255e4067829285c172a11a0a9492a"
+    }
+  ],
+  "repairs": [
+    "Remove invalid Search authOptions while keeping disableLocalAuth true and public data-plane access disabled",
+    "Serialize Foundry model deployment, project creation and account private endpoint"
+  ],
+  "validation": {
+    "recreateCycle": "not-run",
+    "liveVerification": "not-run",
+    "linkedStandardBenefit": "not-verified",
+    "finalCompilation": "passed-offline",
+    "providerValidation": "pending",
+    "nativeApiCenterMcp": "not-run"
+  }
+}
