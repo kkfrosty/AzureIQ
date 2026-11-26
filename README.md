@@ -2,6 +2,14 @@
 
 AzureIQ is a control workspace for creating, configuring, observing, diagnosing, and safely remediating an Azure estate. The goal is a central operational nervous system and supervised subscription manager, not an unrestricted bot with subscription-wide write access.
 
+> **AI SAFETY WARNING - USE AT YOUR OWN RISK:** AI can make mistakes, invent facts,
+> generate destructive changes, and report false success. Strongly prefer isolated
+> development/test environments; production use is discouraged. Avoid autopilot,
+> auto-approval, and unattended AI-directed writes. Independently review and
+> explicitly authorize every change using least-privilege credentials. This
+> experimental software is provided "AS IS", without warranty. Read the full
+> [AI safety and risk disclaimer](DISCLAIMER.md) before use.
+
 **Current status:** supervised operations workspace with a deployed non-production
 Harbor reference stack. Provisioning is not full readiness: authenticated
 application, runtime lifecycle, native discovery and telemetry/alert acceptance
@@ -109,3 +117,15 @@ Run the workspace contract check locally:
 ```
 
 The same check runs for pull requests and pushes to `main`. It validates required files, the single visible Orchestrator, hidden model-routable specialists, automatic-only skills, support-domain value metadata, JSON parsing, local documentation links, forbidden sensitive artifact types, and operating-mode consistency. Bootstrap requires denied writes; supervised management requires configured scope, principal, IaC, telemetry, approval, and no automatic risk tiers. It does not validate live Azure access, RBAC, KQL against a workspace, complete YAML semantics, model routing behavior, or service outcomes.
+
+## License And Contributions
+
+AzureIQ is licensed under the [MIT License](LICENSE), which permits copying,
+modification, commercial use, and redistribution subject to its terms. Third-party
+components retain their own licenses. The [risk disclaimer](DISCLAIMER.md)
+provides safety guidance and does not add restrictions to the MIT License.
+
+Anyone may work in a fork and propose a pull request. Invited write collaborators
+may push working branches in this repository, but only the owner `@kkfrosty` may
+publish to upstream `main`, including direct pushes through the admin bypass.
+See [Contributing](CONTRIBUTING.md) for the access model and review process.
